@@ -20,11 +20,11 @@ const customerSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-  //   cnic: {
-  //     type: String,
-  //     unique: true,
-  //     sparse: true, // Allows unique field to be null or empty
-  //   },
+  cnic: {
+    type: String,
+    unique: true,
+    sparse: true, // Allows unique field to be null or empty
+  },
   balance: {
     type: Number,
     default: 0,
@@ -33,12 +33,24 @@ const customerSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
+  otp: {
+    type: String,
+  },
+  otpExpiry: {
+    type: Date,
+  },
 });
 
-// Modify toJSON method to exclude password
+// Modify toJSON method to exclude password and OTP fields
 customerSchema.methods.toJSON = function () {
   const obj = this.toObject();
   delete obj.password;
+  delete obj.otp;
+  delete obj.otpExpiry;
   return obj;
 };
 

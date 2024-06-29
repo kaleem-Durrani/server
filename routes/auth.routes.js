@@ -4,7 +4,9 @@ import {
   loginCustomer,
   logoutCustomer,
   signupCustomer,
+  verifyOtpCustomer,
 } from "../controllers/auth.customerController.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -28,11 +30,20 @@ const loginValidation = [
   body("password").notEmpty().withMessage("Password is required"),
 ];
 
+// Validation rules for OTP verification
+const otpValidation = [
+  body("otp")
+    .isLength({ min: 6, max: 6 })
+    .withMessage("OTP must be 6 characters long"),
+];
+
 // Define routes with validation
 router.post("/signup", signupValidation, signupCustomer);
 
 router.post("/login", loginValidation, loginCustomer);
 
 router.post("/logout", logoutCustomer);
+
+router.post("/verify-otp", otpValidation, verifyOtpCustomer);
 
 export default router;

@@ -2,6 +2,13 @@ import Customer from "../models/customer.model.js";
 import bcrypt from "bcryptjs";
 import { validationResult } from "express-validator";
 import generateToken from "../utils/generateToken.js";
+import sendEmail from "../utils/sendEmail.js";
+import crypto from "crypto";
+import jwt from "jsonwebtoken";
+
+const generateOtp = () => {
+  return crypto.randomBytes(3).toString("hex"); // Generates a 6-character OTP
+};
 
 // Signup controller function
 export const signupCustomer = async (req, res) => {
@@ -30,25 +37,32 @@ export const signupCustomer = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Generate OTP
+    const otp = generateOtp();
+    const otpExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes from now
+
     // Create new customer
     const newCustomer = new Customer({
       name,
       email,
       password: hashedPassword,
       phoneNumber,
+      otp,
+      otpExpiry,
     });
 
     await newCustomer.save();
 
-    // Exclude the password from the response
-    const customerResponse = newCustomer.toJSON();
+    // Send OTP email
+    await sendEmail(email, "Your OTP Code", `Your OTP code is ${otp}`);
 
-    // const token = jwt.sign({ id: newCustomer._id }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+    // Exclude the password and OTP from the response
+    const customerResponse = newCustomer.toJSON();
 
     const token = generateToken(newCustomer._id, res);
 
     res.status(201).json({
-      message: "Customer created successfully",
+      message: "Customer created successfully. OTP sent to email.",
       customer: customerResponse,
       token,
     });
@@ -92,4 +106,44 @@ export const loginCustomer = async (req, res) => {
 export const logoutCustomer = (req, res) => {
   // Here you can handle session or token invalidation if you're using sessions or JWT
   res.status(200).json({ message: "Logout successful" });
+};
+
+// Verify OTP controller function
+export const verifyOtpCustomer = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { otp } = req.body;
+  const authHeader = req.header("Authorization");
+
+  if (!authHeader) {
+    return res.status(401).json({ error: "Access denied. No token provided." });
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    const customer = await Customer.findById(userId);
+    if (!customer) {
+      return res.status(400).json({ error: "Invalid token or user not found" });
+    }
+
+    if (customer.otp !== otp) {
+      return res.status(400).json({ error: "Invalid OTP" });
+    }
+
+    customer.isVerified = true;
+    customer.otp = null; // Clear the OTP
+    await customer.save();
+
+    res.status(200).json({ message: "Account verified successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server error" });
+  }
 };
