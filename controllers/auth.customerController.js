@@ -17,16 +17,6 @@ export const signupCustomer = async (req, res) => {
       return res.status(400).json({ error: "Passwords do not match" });
     }
 
-    // if (cnic) {
-    //   existingCustomer = await Customer.findOne({
-    //     $or: [{ email }, { phoneNumber }, { cnic }],
-    //   });
-    // } else {
-    //   existingCustomer = await Customer.findOne({
-    //     $or: [{ email }, { phoneNumber }],
-    //   });
-    // }
-
     const existingCustomer = await Customer.findOne({
       $or: [{ email }, { phoneNumber }],
     });
