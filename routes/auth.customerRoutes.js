@@ -6,7 +6,6 @@ import {
   signupCustomer,
   verifyOtpCustomer,
 } from "../controllers/auth.customerController.js";
-import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 

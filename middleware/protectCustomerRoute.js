@@ -3,7 +3,7 @@ import Customer from "../models/customer.model.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
-const authMiddleware = async (req, res, next) => {
+const protectCustomerRoute = async (req, res, next) => {
   const authHeader = req.header("Authorization");
 
   if (!authHeader) {
@@ -15,7 +15,9 @@ const authMiddleware = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     console.log(decoded);
-    const customer = await Customer.findById(decoded.userId);
+    const customer = await Customer.findById(decoded.userId).select(
+      "-password"
+    );
 
     if (!customer) {
       return res.status(401).json({ error: "Customer not found" });
@@ -32,4 +34,4 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-export default authMiddleware;
+export default protectCustomerRoute;
