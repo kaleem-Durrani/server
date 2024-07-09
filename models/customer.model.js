@@ -20,11 +20,11 @@ const customerSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-  cnic: {
-    type: String,
-    unique: true,
-    sparse: true, // Allows unique field to be null or empty
-  },
+  // cnic: {
+  //   type: String,
+  //   unique: true,
+  //   sparse: true, // Allows unique field to be null or empty
+  // },
   balance: {
     type: Number,
     default: 0,

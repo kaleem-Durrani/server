@@ -1,7 +1,8 @@
 import express from "express";
 import { config } from "dotenv";
 
-import authCustomerRoutes from "./routes/auth.routes.js";
+import authCustomerRoutes from "./routes/auth.customerRoutes.js";
+import authEmployeeRoutes from "./routes/auth.employeeRoutes.js";
 import connectToMongoDB from "./db/connectToMongoDB.js";
 
 const app = express();
@@ -12,6 +13,7 @@ config();
 app.use(express.json()); // to parse the incoming request with JSON payloads (from req.body)
 
 app.use("/api/auth/customer", authCustomerRoutes);
+app.use("/api/auth/employee", authEmployeeRoutes);
 
 // app.get("/", (req, res) => {
 //   res.send("Hello World");

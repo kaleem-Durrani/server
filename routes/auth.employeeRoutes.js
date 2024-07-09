@@ -1,12 +1,10 @@
 import express from "express";
 import { body } from "express-validator";
 import {
-  loginCustomer,
-  logoutCustomer,
-  signupCustomer,
-  verifyOtpCustomer,
-} from "../controllers/auth.customerController.js";
-import authMiddleware from "../middleware/authMiddleware.js";
+  loginEmployee,
+  logoutEmployee,
+  signupEmployee,
+} from "../controllers/auth.employeeController.js";
 
 const router = express.Router();
 
@@ -38,12 +36,12 @@ const otpValidation = [
 ];
 
 // Define routes with validation
-router.post("/signup", signupValidation, signupCustomer);
+router.post("/signup", signupValidation, signupEmployee);
 
-router.post("/login", loginValidation, loginCustomer);
+router.post("/login", loginValidation, loginEmployee);
 
-router.post("/logout", logoutCustomer);
+router.post("/logout", logoutEmployee);
 
-router.post("/verify-otp", otpValidation, verifyOtpCustomer);
+// router.post("/verify-otp", otpValidation, verifyOtpCustomer);
 
 export default router;

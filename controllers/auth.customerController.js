@@ -27,9 +27,11 @@ export const signupCustomer = async (req, res) => {
     const existingCustomer = await Customer.findOne({
       $or: [{ email }, { phoneNumber }],
     });
-    if (existingCustomer) {
+
+    // If customer already exists and account already verified
+    if (existingCustomer && existingCustomer.isVerified) {
       return res.status(400).json({
-        error: "Customer with the same email, phone number already exists",
+        error: "Customer with the same email or phone number already exists",
       });
     }
 
@@ -40,6 +42,36 @@ export const signupCustomer = async (req, res) => {
     // Generate OTP
     const otp = generateOtp();
     const otpExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes from now
+
+    // If customer exists but is not verified, update their details
+    if (existingCustomer && !existingCustomer.isVerified) {
+      // Check if OTP is still valid
+      if (existingCustomer.otpExpiry > Date.now()) {
+        const remainingTime = (existingCustomer.otpExpiry - Date.now()) / 1000;
+        return res.status(400).json({
+          error: `OTP already sent. Try again in ${Math.ceil(
+            remainingTime
+          )} seconds`,
+        });
+      } else {
+        // Update existing customer's details
+        existingCustomer.name = name;
+        existingCustomer.email = email;
+        existingCustomer.password = hashedPassword;
+        existingCustomer.phoneNumber = phoneNumber;
+        existingCustomer.otp = otp;
+        existingCustomer.otpExpiry = otpExpiry;
+
+        await existingCustomer.save();
+
+        // Send new OTP email
+        await sendEmail(email, "Your OTP Code", `Your new OTP code is ${otp}`);
+
+        return res.status(200).json({
+          message: "New OTP sent to email.",
+        });
+      }
+    }
 
     // Create new customer
     const newCustomer = new Customer({
@@ -58,6 +90,8 @@ export const signupCustomer = async (req, res) => {
 
     // Exclude the password and OTP from the response
     const customerResponse = newCustomer.toJSON();
+    delete customerResponse.password;
+    delete customerResponse.otp;
 
     const token = generateToken(newCustomer._id, res);
 
@@ -137,8 +171,13 @@ export const verifyOtpCustomer = async (req, res) => {
       return res.status(400).json({ error: "Invalid OTP" });
     }
 
+    if (customer.otpExpiry < Date.now()) {
+      return res.status(400).json({ error: "OTP has expired" });
+    }
+
     customer.isVerified = true;
     customer.otp = null; // Clear the OTP
+    customer.otpExpiry = null; // Clear the OTP expiry
     await customer.save();
 
     res.status(200).json({ message: "Account verified successfully" });
