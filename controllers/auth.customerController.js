@@ -125,7 +125,7 @@ export const loginCustomer = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ error: "Invalid email or password" });
     }
-    console.log(customer);
+    // console.log(customer);
 
     const token = generateToken(customer._id, res);
 

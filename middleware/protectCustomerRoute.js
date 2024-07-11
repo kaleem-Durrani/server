@@ -14,7 +14,7 @@ const protectCustomerRoute = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    console.log(decoded);
+    // console.log(decoded);
     const customer = await Customer.findById(decoded.userId).select(
       "-password"
     );
@@ -30,6 +30,8 @@ const protectCustomerRoute = async (req, res, next) => {
     req.user = decoded; // Attach the decoded payload to the request object
     next();
   } catch (error) {
+    console.log("Error in protect customer route", error);
+
     return res.status(400).json({ error: "Invalid token." });
   }
 };

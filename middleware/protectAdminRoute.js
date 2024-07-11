@@ -35,6 +35,8 @@ const protectAdminRoute = async (req, res, next) => {
     req.admin = admin;
     next();
   } catch (error) {
+    console.log("Error in protect admin route", error);
+
     return res.status(400).json({ error: "Invalid token." });
   }
 };

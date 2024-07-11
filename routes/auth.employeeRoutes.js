@@ -4,6 +4,7 @@ import {
   loginEmployee,
   logoutEmployee,
   signupEmployee,
+  verifyOtpEmployee,
 } from "../controllers/auth.employeeController.js";
 
 const router = express.Router();
@@ -19,6 +20,13 @@ const signupValidation = [
     .isLength({ min: 6 })
     .withMessage("Confirm password must be at least 6 characters"),
   body("phoneNumber").isString().withMessage("Phone number must be a string"), // Changed to string validation
+  body("type")
+    .isString()
+    .isIn(["manager", "refueler"])
+    .withMessage("Employee type is required, and must be manager or employee"),
+  body("pumpId")
+    .isString()
+    .withMessage("pumpId is required obtain it from your manager"),
   //   body("cnic").optional().isString().withMessage("CNIC must be a string"),
 ];
 
@@ -42,6 +50,6 @@ router.post("/login", loginValidation, loginEmployee);
 
 router.post("/logout", logoutEmployee);
 
-// router.post("/verify-otp", otpValidation, verifyOtpCustomer);
+router.post("/verify-otp", otpValidation, verifyOtpEmployee);
 
 export default router;

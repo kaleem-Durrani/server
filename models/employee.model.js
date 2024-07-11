@@ -30,7 +30,7 @@ const employeeSchema = new mongoose.Schema(
       ref: "Pump",
       required: true,
     },
-    verified: {
+    isVerified: {
       type: Boolean,
       default: false,
     },

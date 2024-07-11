@@ -1,5 +1,9 @@
 import express from "express";
-import { addManagerToPump, addPump } from "../controllers/pump.controller.js";
+import {
+  addEmployeeToPump,
+  addManagerToPump,
+  addPump,
+} from "../controllers/pump.controller.js";
 import protectAdminRoute from "../middleware/protectAdminRoute.js";
 
 import { body } from "express-validator";
@@ -25,6 +29,12 @@ const validateAddManagerToPump = [
   body("employeeId").notEmpty().withMessage("Employee ID is required"),
 ];
 
+const validateAddEmployeeToPump = [
+  body("pumpId").notEmpty().withMessage("Pump ID is required"),
+  body("employeeId").notEmpty().withMessage("Employee ID is required"),
+  // Add any other validation rules as needed
+];
+
 router.post("/addPump", validateAddPump, protectAdminRoute, addPump);
 
 router.post(
@@ -32,6 +42,13 @@ router.post(
   validateAddManagerToPump,
   protectAdminRoute,
   addManagerToPump
+);
+
+router.post(
+  "/addEmployeeToPump",
+  validateAddEmployeeToPump,
+  protectAdminRoute,
+  addEmployeeToPump
 );
 
 export default router;
