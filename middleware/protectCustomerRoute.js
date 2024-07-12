@@ -27,7 +27,7 @@ const protectCustomerRoute = async (req, res, next) => {
       return res.status(401).json({ error: "Customer not verified" });
     }
 
-    req.user = decoded; // Attach the decoded payload to the request object
+    req.customer = decoded; // Attach the decoded payload to the request object
     next();
   } catch (error) {
     console.log("Error in protect customer route", error);

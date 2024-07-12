@@ -6,6 +6,8 @@ import authEmployeeRoutes from "./routes/auth.employeeRoutes.js";
 import authAdminRoutes from "./routes/auth.adminRoutes.js";
 
 import pumpRoutes from "./routes/pump.routes.js";
+import customerRoutes from "./routes/customer.routes.js";
+import employeeRoutes from "./routes/employee.routes.js";
 
 import connectToMongoDB from "./db/connectToMongoDB.js";
 
@@ -21,6 +23,8 @@ app.use("/api/auth/employee", authEmployeeRoutes);
 app.use("/api/auth/admin", authAdminRoutes);
 
 app.use("/api/pump", pumpRoutes);
+app.use("/api/customer", customerRoutes);
+app.use("/api/employee", employeeRoutes);
 
 // app.get("/", (req, res) => {
 //   res.send("Hello World");

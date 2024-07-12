@@ -10,6 +10,7 @@ const generateOtp = () => {
   return crypto.randomBytes(3).toString("hex"); // Generates a 6-character OTP
 };
 
+// signup needs work as to not sent otp until the previous one is expired
 export const signupEmployee = async (req, res) => {
   const errors = validationResult(req);
 

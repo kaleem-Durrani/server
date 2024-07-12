@@ -44,5 +44,14 @@ const employeeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Modify toJSON method to exclude password and OTP fields
+employeeSchema.methods.toJSON = function () {
+  const obj = this.toObject();
+  delete obj.password;
+  delete obj.otp;
+  delete obj.otpExpiry;
+  return obj;
+};
+
 const Employee = mongoose.model("Employee", employeeSchema);
 export default Employee;

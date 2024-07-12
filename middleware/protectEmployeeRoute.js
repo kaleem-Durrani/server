@@ -27,7 +27,7 @@ const protectEmployeeRoute = async (req, res, next) => {
       return res.status(401).json({ error: "Employee not verified" });
     }
 
-    req.employee = employee;
+    req.employee = decoded;
     next();
   } catch (error) {
     console.log("Error in protect employee route", error);

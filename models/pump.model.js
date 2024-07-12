@@ -11,6 +11,10 @@ const pumpSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    balance: {
+      type: Number,
+      default: 0,
+    },
     coordinates: {
       type: new mongoose.Schema(
         {

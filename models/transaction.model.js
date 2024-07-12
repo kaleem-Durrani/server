@@ -6,8 +6,18 @@ const transactionSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    paymentMethod: {
+      type: String,
+      enum: ["cash", "app"],
+      required: true,
+    },
     fuelType: {
       type: String,
+      enum: ["petrol", "diesel", "cng"],
+      required: true,
+    },
+    fuelAmount: {
+      type: Number,
       required: true,
     },
     customerId: {
