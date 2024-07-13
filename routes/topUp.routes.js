@@ -1,7 +1,10 @@
 import express from "express";
 import { body } from "express-validator";
-import protectCustomerRoute from "../middleware/protectCustomerRoute";
-import { getTopUpHistory, topUpAccount } from "../controllers/topUp.controller";
+import protectCustomerRoute from "../middleware/protectCustomerRoute.js";
+import {
+  getTopUpHistory,
+  topUpAccount,
+} from "../controllers/topUp.controller.js";
 
 const router = express.Router();
 

@@ -1,11 +1,13 @@
 import express from "express";
 import { body } from "express-validator";
-import protectCustomerRoute from "../middleware/protectCustomerRoute";
+import protectCustomerRoute from "../middleware/protectCustomerRoute.js";
 import {
   createTransaction,
   getCustomerTransactionHistory,
-} from "../controllers/transaction.controller";
-import protectEmployeeRoute from "../middleware/protectEmployeeRoute";
+  getEmployeeTransactionHistory,
+  getRefuelerTransactionHistory,
+} from "../controllers/transaction.controller.js";
+import protectEmployeeRoute from "../middleware/protectEmployeeRoute.js";
 
 const router = express.Router();
 
@@ -40,9 +42,21 @@ router.post(
 );
 
 router.get(
-  "/cutomerHistory",
+  "/customerHistory",
   protectCustomerRoute,
   getCustomerTransactionHistory
+);
+
+router.get(
+  "/refuelerHistory",
+  protectEmployeeRoute,
+  getRefuelerTransactionHistory
+);
+
+router.get(
+  "/employeeHistory",
+  protectEmployeeRoute,
+  getEmployeeTransactionHistory
 );
 
 export default router;

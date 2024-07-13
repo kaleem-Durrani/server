@@ -1,4 +1,4 @@
-import FundsTransfer from "../models/fundsTransfer.model";
+import FundsTransfer from "../models/fundsTransfer.model.js";
 
 // funds transfer history
 export const getFundsTransferHistory = async (req, res) => {

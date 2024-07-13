@@ -1,10 +1,10 @@
 import express from "express";
 import { body } from "express-validator";
-import protectCustomerRoute from "./../middleware/protectCustomerRoute";
+import protectCustomerRoute from "./../middleware/protectCustomerRoute.js";
 import {
   getFundsTransferHistory,
   transferFunds,
-} from "../controllers/fundsTransfer.controller";
+} from "../controllers/fundsTransfer.controller.js";
 
 const router = express.Router();
 

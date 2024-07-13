@@ -1,8 +1,10 @@
-import Transaction from "../models/transaction.model";
-import Customer from "../models/customer.model";
-import Employee from "../models/employee.model";
-import Pump from "../models/pump.model";
+import Transaction from "../models/transaction.model.js";
+import Customer from "../models/customer.model.js";
+import Employee from "../models/employee.model.js";
+import Pump from "../models/pump.model.js";
+import { validationResult } from "express-validator";
 
+// accessed by customers to view their transaction history
 export const getCustomerTransactionHistory = async (req, res) => {
   // retreive the customer id from the protecgt customer middleware
   const customerId = req.customer.userId;
@@ -32,6 +34,7 @@ export const getCustomerTransactionHistory = async (req, res) => {
   }
 };
 
+// accessed by employees to create a transaction
 export const createTransaction = async (req, res) => {
   const errors = validationResult(req);
 
@@ -113,6 +116,88 @@ export const createTransaction = async (req, res) => {
         transaction,
       });
     }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// accessed by employees to get thier own transaction history
+export const getRefuelerTransactionHistory = async (req, res) => {
+  // get employee id from the protect employee route middleware
+
+  const employeeId = req.employee.userId;
+  try {
+    // find transactions in the Transaction model
+    const refuelerTransactions = await Transaction.find({ employeeId })
+      .sort({ createdAt: -1 })
+      .populate("customerId", "name");
+
+    if (!refuelerTransactions) {
+      return res
+        .status(404)
+        .json({ message: "No refueler transactions found" });
+    }
+
+    // return the refueler transaction history
+    res.status(200).json({
+      message: "Refueler transaction history successfully retrieved",
+      transactions: refuelerTransactions,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// ........................................ //
+// performs bad needs optimization
+// accessed by managers to geth thier employees transaction history
+export const getEmployeeTransactionHistory = async (req, res) => {
+  // Get manager id from the protect employee route middleware
+  const managerId = req.employee.userId;
+
+  const { employeeId } = req.body;
+
+  try {
+    // Find manager in the employee table
+    const managerEmployee = await Employee.findById(managerId).lean();
+
+    // Check if manager type is not manager
+    if (managerEmployee.type !== "manager") {
+      return res.status(403).json({
+        message:
+          "Access denied! Employee History only available to the manager",
+      });
+    }
+
+    // Find employee in the employee table
+    const employee = await Employee.findById(employeeId).lean();
+    // Check if employee exists
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    // Find transactions in the Transaction model
+    const employeeTransactions = await Transaction.find({
+      employeeId: employeeId,
+    })
+      .sort({ createdAt: -1 })
+      .populate("customerId", "name")
+      .lean(); // Use lean for better performance
+
+    // If no transactions are found
+    if (employeeTransactions.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No employee transactions found" });
+    }
+
+    // Return the employee transaction history
+    res.status(200).json({
+      message: "Employee transaction history successfully retrieved",
+      transactions: employeeTransactions,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });

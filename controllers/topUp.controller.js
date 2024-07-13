@@ -1,5 +1,5 @@
-import TopUp from "../models/topUp.model";
-import Customer from "../models/customer.model";
+import TopUp from "../models/topUp.model.js";
+import Customer from "../models/customer.model.js";
 
 // top up dummy balance
 export const topUpAccount = async (req, res) => {
