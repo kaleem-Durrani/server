@@ -8,15 +8,15 @@ const fundsTransferSchema = new mongoose.Schema(
     },
     entityTransferred: {
       type: String,
-      enum: ["points", "cash"],
+      enum: ["points", "balance"],
       required: true,
     },
-    sender: {
+    senderId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Customer",
       required: true,
     },
-    receiver: {
+    receiverId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Customer",
       required: true,
