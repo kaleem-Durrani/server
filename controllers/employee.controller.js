@@ -67,3 +67,36 @@ export const getEmployeeList = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+export const updateProfile = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const employee = req.employee.userId;
+
+  const { name, phoneNumber } = req.body;
+
+  try {
+    const updatedEmployee = await Employee.findByIdAndUpdate(
+      employee,
+      {
+        name,
+        phoneNumber,
+      },
+      { new: true }
+    );
+
+    if (!updatedEmployee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    res
+      .status(200)
+      .json({ message: "Profile updated successfully", updatedEmployee });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
