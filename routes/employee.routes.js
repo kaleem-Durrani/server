@@ -2,6 +2,7 @@ import express from "express";
 import { body } from "express-validator";
 import protectEmployeeRoute from "../middleware/protectEmployeeRoute.js";
 import {
+  changePassword,
   getEmployeeList,
   getEmployeeProfile,
   updateProfile,
@@ -9,10 +10,35 @@ import {
 
 const router = express.Router();
 
+const changePasswordValidation = [
+  body("currentPassword")
+    .notEmpty()
+    .isString()
+    .withMessage("Current password is required"),
+  body("newPassword")
+    .notEmpty()
+    .isString()
+    .withMessage("New password is required"),
+  body("confirmPassword")
+    .notEmpty()
+    .isString()
+    .withMessage("Confirm password is required"),
+  body("confirmPassword")
+    .custom((value, { req }) => value === req.body.newPassword)
+    .withMessage("Passwords do not match"),
+];
+
 router.post("/updateProfile", protectEmployeeRoute, updateProfile);
 
 router.get("/profile", protectEmployeeRoute, getEmployeeProfile);
 
 router.get("/employeeList", protectEmployeeRoute, getEmployeeList);
+
+router.post(
+  "/changePassword",
+  changePasswordValidation,
+  protectEmployeeRoute,
+  changePassword
+);
 
 export default router;

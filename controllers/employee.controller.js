@@ -1,6 +1,8 @@
 import Employee from "../models/employee.model.js";
 import { validationResult } from "express-validator";
 import Pump from "../models/pump.model.js";
+import bcrypt from "bcryptjs";
+
 import Customer from "../models/customer.model.js";
 import Transaction from "../models/transaction.model.js";
 
@@ -95,6 +97,46 @@ export const updateProfile = async (req, res) => {
     res
       .status(200)
       .json({ message: "Profile updated successfully", updatedEmployee });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const employeeId = req.employee.userId;
+
+  const { oldPassword, newPassword } = req.body;
+
+  try {
+    // find employee in the database
+    const employee = await Employee.findById(employeeId);
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    // compare old password with the one in the database
+    const isMatch = await employee.comparePassword(oldPassword);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid old password" });
+    }
+
+    // hash the new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // update password in the database
+    employee.password = hashedPassword;
+    await employee.save();
+
+    res.status(200).json({ message: "Password updated successfully" });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
