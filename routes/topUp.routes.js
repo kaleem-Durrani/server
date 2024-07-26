@@ -8,7 +8,7 @@ import {
 
 const router = express.Router();
 
-router.post("topUpAccount", protectCustomerRoute, topUpAccount);
+router.post("/topUpAccount", protectCustomerRoute, topUpAccount);
 
 router.get("/history", protectCustomerRoute, getTopUpHistory);
 

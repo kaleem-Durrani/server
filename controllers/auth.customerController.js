@@ -7,7 +7,8 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 
 const generateOtp = () => {
-  return crypto.randomBytes(3).toString("hex"); // Generates a 6-character OTP
+  // create a six digit otp
+  return crypto.randomInt(100000, 1000000).toString();
 };
 
 // Signup controller function
@@ -45,11 +46,21 @@ export const signupCustomer = async (req, res) => {
 
     // If customer exists but is not verified, update their details
     if (existingCustomer && !existingCustomer.isVerified) {
+      if (
+        existingCustomer.email !== email ||
+        existingCustomer.phoneNumber !== phoneNumber
+      ) {
+        return res.status(400).json({
+          error:
+            "The email or phone number is already registered to another account",
+        });
+      }
+
       // Check if OTP is still valid
       if (existingCustomer.otpExpiry > Date.now()) {
         const remainingTime = (existingCustomer.otpExpiry - Date.now()) / 1000;
         return res.status(400).json({
-          error: `OTP already sent. Try again in ${Math.ceil(
+          error: `OTP already sent. Verify Account or Try again in ${Math.ceil(
             remainingTime
           )} seconds`,
         });
@@ -88,16 +99,11 @@ export const signupCustomer = async (req, res) => {
     // Send OTP email
     await sendEmail(email, "Your OTP Code", `Your OTP code is ${otp}`);
 
-    // Exclude the password and OTP from the response
-    const customerResponse = newCustomer.toJSON();
-    delete customerResponse.password;
-    delete customerResponse.otp;
-
-    const token = generateToken(newCustomer._id, res);
+    const token = generateToken(newCustomer._id, newCustomer.isVerified, res);
 
     res.status(201).json({
       message: "Customer created successfully. OTP sent to email.",
-      customer: customerResponse,
+      customer: newCustomer,
       token,
     });
   } catch (error) {
@@ -108,6 +114,7 @@ export const signupCustomer = async (req, res) => {
 
 // Login controller function
 export const loginCustomer = async (req, res) => {
+  // console.log("login initiated");
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -127,7 +134,7 @@ export const loginCustomer = async (req, res) => {
     }
     // console.log(customer);
 
-    const token = generateToken(customer._id, res);
+    const token = generateToken(customer._id, customer.isVerified, res);
 
     res.status(200).json({ message: "Login successful", token });
   } catch (error) {
@@ -167,12 +174,18 @@ export const verifyOtpCustomer = async (req, res) => {
       return res.status(400).json({ error: "Invalid token or user not found" });
     }
 
+    if (customer.isVerified) {
+      return res.status(400).json({ error: "Account already verified" });
+    }
+
     if (customer.otp !== otp) {
       return res.status(400).json({ error: "Invalid OTP" });
     }
 
     if (customer.otpExpiry < Date.now()) {
-      return res.status(400).json({ error: "OTP has expired" });
+      return res
+        .status(400)
+        .json({ error: "OTP has expired, \nPlease Request another" });
     }
 
     customer.isVerified = true;
@@ -180,7 +193,69 @@ export const verifyOtpCustomer = async (req, res) => {
     customer.otpExpiry = null; // Clear the OTP expiry
     await customer.save();
 
-    res.status(200).json({ message: "Account verified successfully" });
+    const resToken = generateToken(customer._id, customer.isVerified, res);
+
+    res.status(200).json({
+      message: "Account verified successfully",
+      customer,
+      token: resToken,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+
+// request new otp if current expired or not received
+export const requetsNewOtp = async (req, res) => {
+  console.log("new otp requested");
+  const authHeader = req.header("Authorization");
+  if (!authHeader) {
+    return res.status(401).json({ error: "Access denied. No token provided." });
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    const customer = await Customer.findById(userId);
+    if (!customer) {
+      return res.status(400).json({ error: "Invalid token or user not found" });
+    }
+
+    if (customer.isVerified) {
+      return res.status(400).json({ error: "Account already verified" });
+    }
+
+    // check for otp expiry if otp not expired return error
+    if (customer.otpExpiry > Date.now()) {
+      const remainingTime = (customer.otpExpiry - Date.now()) / 1000;
+      return res.status(400).json({
+        error: `OTP already sent. Verify Account or Try again in ${Math.ceil(
+          remainingTime
+        )} seconds`,
+      });
+    }
+
+    // Generate new OTP
+    const otp = generateOtp();
+    const otpExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes from now
+
+    customer.otp = otp;
+    customer.otpExpiry = otpExpiry;
+
+    await customer.save();
+
+    // Send OTP email
+    await sendEmail(customer.email, "Your OTP Code", `Your OTP code is ${otp}`);
+
+    console.log("new otp sent");
+
+    res
+      .status(200)
+      .json({ message: `New OTP sent to email. \n${customer.email}` });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server error" });

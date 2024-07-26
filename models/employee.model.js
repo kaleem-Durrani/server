@@ -25,6 +25,10 @@ const employeeSchema = new mongoose.Schema(
       enum: ["manager", "refueler"],
       required: true,
     },
+    isEmployed: {
+      type: Boolean,
+      default: false,
+    },
     pumpId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Pump",

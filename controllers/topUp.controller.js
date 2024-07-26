@@ -1,5 +1,6 @@
 import TopUp from "../models/topUp.model.js";
 import Customer from "../models/customer.model.js";
+import { validationResult } from "express-validator";
 
 // top up dummy balance
 export const topUpAccount = async (req, res) => {
@@ -8,6 +9,9 @@ export const topUpAccount = async (req, res) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
+
+  // console.log("top up api accessed");
+  // return res.status(400).json({ error: "just a test error" });
 
   const customerId = req.customer.userId;
   const { amount, topUpThrough } = req.body;
@@ -28,16 +32,16 @@ export const topUpAccount = async (req, res) => {
     });
 
     // update the customer balance
-    customer.balance += amount;
+    customer.balance += Number(amount);
 
     // save the changes to the database
     Promise.all([topUp.save(), customer.save()]);
 
     // return the updated customer profile and top up record
     res.status(200).json({
-      message: "Top up successful",
-      customer,
-      topUp,
+      message: `Top up of ${amount} through ${topUpThrough} successful`,
+      // customer,
+      // topUp,
     });
   } catch (error) {
     console.log(error);
@@ -56,11 +60,13 @@ export const getTopUpHistory = async (req, res) => {
       createdAt: -1,
     });
 
-    if (!topUpHistory) {
-      res
+    if (!topUpHistory || topUpHistory.length === 0) {
+      // console.log("no top up history found");
+      return res
         .status(404)
-        .json({ message: "No top up history found for this customer" });
+        .json({ error: "No top up history found for this customer" });
     }
+    console.log(topUpHistory);
 
     // return the top up history
     res.status(200).json({

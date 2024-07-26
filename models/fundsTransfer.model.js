@@ -6,7 +6,7 @@ const fundsTransferSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    entityTransferred: {
+    entityTransfered: {
       type: String,
       enum: ["points", "balance"],
       required: true,

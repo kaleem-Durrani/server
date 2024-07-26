@@ -3,6 +3,9 @@ import {
   addEmployeeToPump,
   addManagerToPump,
   addPump,
+  getEmployeeListByPump,
+  getPumpList,
+  removeEmployeeFromPump,
 } from "../controllers/pump.controller.js";
 import protectAdminRoute from "../middleware/protectAdminRoute.js";
 
@@ -49,6 +52,17 @@ router.post(
   validateAddEmployeeToPump,
   protectAdminRoute,
   addEmployeeToPump
+);
+
+router.get("/getPumpList", protectAdminRoute, getPumpList);
+
+// @access Admin
+router.post("employeeListByPump", protectAdminRoute, getEmployeeListByPump);
+
+router.post(
+  "/removeEmployeeFromPump",
+  protectAdminRoute,
+  removeEmployeeFromPump
 );
 
 export default router;

@@ -20,7 +20,7 @@ const protectCustomerRoute = async (req, res, next) => {
     );
 
     if (!customer) {
-      return res.status(401).json({ error: "Customer not found" });
+      return res.status(404).json({ error: "Customer not found" });
     }
 
     if (!customer.isVerified) {

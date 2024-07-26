@@ -1,6 +1,9 @@
 import express from "express";
 import { body } from "express-validator";
-import { loginAdmin } from "../controllers/auth.adminController.js";
+import {
+  loginAdmin,
+  logoutAdmin,
+} from "../controllers/auth.adminController.js";
 
 const router = express.Router();
 
@@ -11,5 +14,7 @@ const loginValidation = [
 ];
 
 router.post("/login", loginValidation, loginAdmin);
+
+router.post("/logout", logoutAdmin);
 
 export default router;

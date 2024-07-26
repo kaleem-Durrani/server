@@ -9,6 +9,9 @@ export const getCustomerTransactionHistory = async (req, res) => {
   // retreive the customer id from the protecgt customer middleware
   const customerId = req.customer.userId;
 
+  // testing error response
+  // return res.status(400).json({ error: "this is just a test error" });
+
   try {
     // find transactions using customer id
 
@@ -17,10 +20,10 @@ export const getCustomerTransactionHistory = async (req, res) => {
       .populate("pumpId", "name") // Populate pump details
       .populate("employeeId", "name"); // Populate employee details
 
-    if (!transactions) {
-      res
+    if (!transactions || transactions.length === 0) {
+      return res
         .status(404)
-        .json({ message: "No transactions found for this customer" });
+        .json({ error: "No transactions found for this customer" });
     }
 
     // return the transaction history

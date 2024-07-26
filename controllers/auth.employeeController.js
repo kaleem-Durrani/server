@@ -7,7 +7,8 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 
 const generateOtp = () => {
-  return crypto.randomBytes(3).toString("hex"); // Generates a 6-character OTP
+  // create a six digit otp
+  return crypto.randomInt(100000, 1000000).toString();
 };
 
 // signup needs work as to not sent otp until the previous one is expired
@@ -101,11 +102,7 @@ export const signupEmployee = async (req, res) => {
     // Send OTP email
     await sendEmail(email, "Your OTP Code", `Your OTP code is ${otp}`);
 
-    const employeeResponse = newEmployee.toJSON();
-    delete employeeResponse.password;
-    delete employeeResponse.otp;
-
-    const token = generateToken(newEmployee._id, res);
+    const token = generateToken(newEmployee._id, newEmployee.isVerified, res);
 
     res.status(201).json({
       message: "Employee created successfully. OTP sent to email.",
@@ -141,7 +138,7 @@ export const loginEmployee = async (req, res) => {
 
     // console.log(employee);
 
-    const token = generateToken(employee._id, res);
+    const token = generateToken(employee._id, employee.isVerified, res);
 
     res.status(200).json({ message: "Login successful", token });
   } catch (error) {
@@ -149,6 +146,7 @@ export const loginEmployee = async (req, res) => {
     res.status(500).json({ error: "Internal Server error" });
   }
 };
+
 export const logoutEmployee = async (req, res) => {
   res.status(200).json({ message: "Logout successful" });
 };

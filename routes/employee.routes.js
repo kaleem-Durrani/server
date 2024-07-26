@@ -28,12 +28,13 @@ const changePasswordValidation = [
     .withMessage("Passwords do not match"),
 ];
 
+// @access employees (refueler and manager)
 router.post("/updateProfile", protectEmployeeRoute, updateProfile);
 
+// @access employees (refueler and manager)
 router.get("/profile", protectEmployeeRoute, getEmployeeProfile);
 
-router.get("/employeeList", protectEmployeeRoute, getEmployeeList);
-
+// @access employees (refueler and manager)
 router.post(
   "/changePassword",
   changePasswordValidation,
@@ -41,4 +42,6 @@ router.post(
   changePassword
 );
 
+// @access Manager
+router.get("/employeeList", protectEmployeeRoute, getEmployeeList);
 export default router;

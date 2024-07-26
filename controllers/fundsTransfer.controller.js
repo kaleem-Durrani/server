@@ -1,4 +1,6 @@
 import FundsTransfer from "../models/fundsTransfer.model.js";
+import { validationResult } from "express-validator";
+import Customer from "../models/customer.model.js";
 
 // funds transfer history
 export const getFundsTransferHistory = async (req, res) => {
@@ -7,16 +9,18 @@ export const getFundsTransferHistory = async (req, res) => {
 
   try {
     // find funds transfer history using customer id
-    const fundsTransferHistory = await FundsTransfer.find({ customerId })
-      .sort({
-        createdAt: -1,
-      })
-      .populate("receiverId", "name email phoneNumber");
+    // this wont work need to find transfers where sender or receiver is customerId
+    const fundsTransferHistory = await FundsTransfer.find({
+      $or: [{ senderId: customerId }, { receiverId: customerId }],
+    })
+      .sort({ createdAt: -1 })
+      .populate("receiverId", "name email phoneNumber")
+      .populate("senderId", "name email phoneNumber");
 
-    if (!fundsTransferHistory) {
-      res
+    if (!fundsTransferHistory || fundsTransferHistory.length === 0) {
+      return res
         .status(404)
-        .json({ message: "No funds transfer history found for this customer" });
+        .json({ error: "No funds transfer history found for this customer" });
     }
 
     // return the funds transfer history
@@ -32,6 +36,7 @@ export const getFundsTransferHistory = async (req, res) => {
 
 // balance or points transfer
 export const transferFunds = async (req, res) => {
+  // console.log("transfer funds accessed");
   // validate the request
   const errors = validationResult(req);
 
@@ -40,12 +45,19 @@ export const transferFunds = async (req, res) => {
   }
 
   const customerId = req.customer.userId;
-  const { amount, entityTransferred, receiverId } = req.body;
+  const { amount, entityTransfered, receiverId } = req.body;
+
+  // console.log(typeof amount);
 
   try {
     // find the sender and receiver customer profile
     const sender = await Customer.findById(customerId);
     const receiver = await Customer.findById(receiverId);
+
+    // console.log(sender.name);
+    // console.log(receiver.name);
+
+    // return res.status(400).json({ error: "checking the api" });
 
     if (!receiver) {
       return res.status(404).json({ error: "Receiver not found" });
@@ -62,13 +74,13 @@ export const transferFunds = async (req, res) => {
     }
 
     // if transfering balance transfer the balance
-    if (entityTransferred === "balance") {
-      sender.balance -= amount;
-      receiver.balance += amount;
+    if (entityTransfered === "balance") {
+      sender.balance = sender.balance - Number(amount);
+      receiver.balance = receiver.balance + Number(amount);
     }
 
     // if transfering points transfer the points
-    if (entityTransferred === "points") {
+    if (entityTransfered === "points") {
       sender.points -= amount;
       receiver.points += amount;
     }
@@ -76,7 +88,7 @@ export const transferFunds = async (req, res) => {
     // create a funds transfer record
     const fundsTransfer = new FundsTransfer({
       amount,
-      entityTransferred,
+      entityTransfered,
       senderId: customerId,
       receiverId,
     });
@@ -90,6 +102,46 @@ export const transferFunds = async (req, res) => {
       sender,
       receiver,
       fundsTransfer,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// find the receiver for transfer fund (customer access)
+export const findReceiver = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { phoneNumber } = req.body;
+  const sender = req.customer.userId;
+  // console.log(req.body);
+  // console.log(phoneNumber);
+  // const sender = req.customer.userId;
+
+  try {
+    // find receiver using email
+    const receiver = await Customer.findOne({ phoneNumber });
+
+    if (!receiver) {
+      return res.status(404).json({ error: "Receiver not found" });
+    }
+
+    if (!receiver.isVerified) {
+      return res.status(401).json({ error: "Receiver not verified" });
+    }
+
+    if (receiver._id.equals(sender)) {
+      return res.status(400).json({ error: "You cannot transfer to yourself" });
+    }
+
+    // return the receiver profile
+    res.status(200).json({
+      message: "Receiver profile successfully retrieved",
+      receiver,
     });
   } catch (error) {
     console.log(error);

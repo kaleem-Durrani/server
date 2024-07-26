@@ -82,7 +82,7 @@ export const changePassword = async (req, res) => {
   }
 
   const customerId = req.customer.userId;
-  const { oldPassword, newPassword } = req.body;
+  const { currentPassword, newPassword } = req.body;
 
   try {
     // find the customer
@@ -93,7 +93,7 @@ export const changePassword = async (req, res) => {
     }
 
     // check if the old password matches
-    const isMatch = await bcrypt.compare(oldPassword, customer.password);
+    const isMatch = await bcrypt.compare(currentPassword, customer.password);
 
     if (!isMatch) {
       return res.status(400).json({ error: "Invalid old password" });

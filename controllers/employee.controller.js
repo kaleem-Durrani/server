@@ -6,7 +6,9 @@ import bcrypt from "bcryptjs";
 import Customer from "../models/customer.model.js";
 import Transaction from "../models/transaction.model.js";
 
-// accessed by all employees
+// @desc get own profile
+// @route /api/employee/profile
+// @access employees (refueler and manager)
 export const getEmployeeProfile = async (req, res) => {
   // get employee id from auth middleware
   const employeeId = req.employee.userId;
@@ -29,47 +31,9 @@ export const getEmployeeProfile = async (req, res) => {
   }
 };
 
-// accessed only by employees with type managers
-export const getEmployeeList = async (req, res) => {
-  // Get employee id
-  const employeeId = req.employee.userId;
-
-  try {
-    // Find employee in the database
-    const employee = await Employee.findById(employeeId);
-
-    // Check if employee type is manager
-    if (employee.type !== "manager") {
-      return res.status(403).json({ message: "Unauthorized access" });
-    }
-
-    // Find pump where manager is the employee
-    // it returns a list
-    const pumps = await Pump.find({ manager: employeeId }).populate(
-      "employees",
-      "name email"
-    );
-
-    // If no pumps found, this manager is not assigned to a pump
-    if (pumps.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "Manager not assigned to a pump" });
-    }
-
-    // Since a manager can manage only one pump, get the employees of the first pump
-    const employees = pumps[0].employees;
-
-    // Return list of employees assigned to the pump
-    res
-      .status(200)
-      .json({ message: "Employee list successfully retrieved", employees });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
-
+// @desc update profile
+// @route /api/employee/updateProfile
+// @access employees (refueler and manager)
 export const updateProfile = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -103,6 +67,9 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+// @desc change current password while logged in
+// @route /api/employee/changePassword
+// @access employees (refueler and manager)
 export const changePassword = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -137,6 +104,49 @@ export const changePassword = async (req, res) => {
     await employee.save();
 
     res.status(200).json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc get list of all employees
+// @route /api/employee/employeeList
+// @access manager
+export const getEmployeeList = async (req, res) => {
+  // Get employee id
+  const employeeId = req.employee.userId;
+
+  try {
+    // Find employee in the database
+    const employee = await Employee.findById(employeeId);
+
+    // Check if employee type is manager
+    if (employee.type !== "manager") {
+      return res.status(403).json({ message: "Unauthorized access" });
+    }
+
+    // Find pump where manager is the employee
+    // it returns a list
+    const pumps = await Pump.find({ manager: employeeId }).populate(
+      "employees",
+      "name email"
+    );
+
+    // If no pumps found, this manager is not assigned to a pump
+    if (pumps.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Manager not assigned to a pump" });
+    }
+
+    // Since a manager can manage only one pump, get the employees of the first pump
+    const employees = pumps[0].employees;
+
+    // Return list of employees assigned to the pump
+    res
+      .status(200)
+      .json({ message: "Employee list successfully retrieved", employees });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });
