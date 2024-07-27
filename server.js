@@ -1,6 +1,7 @@
 import express from "express";
 import { config } from "dotenv";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 
 import authCustomerRoutes from "./routes/auth.customerRoutes.js";
 import authEmployeeRoutes from "./routes/auth.employeeRoutes.js";
@@ -23,6 +24,13 @@ config();
 
 app.use(express.json()); // to parse the incoming request with JSON payloads (from req.body)
 app.use(cookieParser());
+
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  })
+);
 
 app.use("/api/auth/customer", authCustomerRoutes);
 app.use("/api/auth/employee", authEmployeeRoutes);

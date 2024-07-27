@@ -8,7 +8,14 @@ import { validationResult } from "express-validator";
 export const addPump = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    let errorMsg = "";
+
+    errors
+      .array()
+      .forEach(
+        (error) => (errorMsg += `for: ${error.path}, ${error.message} \n`)
+      );
+    return res.status(400).json({ error: errorMsg });
   }
 
   try {
