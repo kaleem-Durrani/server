@@ -34,7 +34,10 @@ const validateAddManagerToPump = [
 
 const validateAddEmployeeToPump = [
   body("pumpId").notEmpty().withMessage("Pump ID is required"),
-  body("employeeId").notEmpty().withMessage("Employee ID is required"),
+  body("employeeEmail")
+    .notEmpty()
+    .isEmail()
+    .withMessage("Employee email is required"),
   // Add any other validation rules as needed
 ];
 

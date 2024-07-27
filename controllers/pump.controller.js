@@ -94,7 +94,7 @@ export const addEmployeeToPump = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { pumpId, employeeId } = req.body;
+  const { pumpId, employeeEmail } = req.body;
 
   try {
     // Find the pump by ID
@@ -104,10 +104,13 @@ export const addEmployeeToPump = async (req, res) => {
     }
 
     // Check if the employee exists
-    const employee = await Employee.findById(employeeId);
+    const employee = await Employee.findOne({ email: employeeEmail });
+
     if (!employee) {
       return res.status(404).json({ error: "Employee not found" });
     }
+
+    console.log(employee);
 
     if (!employee.isVerified) {
       return res.status(401).json({ error: "Employee not verified" });
@@ -124,7 +127,7 @@ export const addEmployeeToPump = async (req, res) => {
     }
 
     // Add the employee to the pump's refuelers array
-    pump.employees.push(employeeId);
+    pump.employees.push(employee._id);
     employee.isEmployed = true;
 
     Promise.all([await pump.save(), await employee.save()]);
@@ -141,7 +144,10 @@ export const addEmployeeToPump = async (req, res) => {
 // @access admin
 export const getPumpList = async (req, res) => {
   try {
-    const pumps = await Pump.find().sort({ createdAt: -1 });
+    const pumps = await Pump.find()
+      .sort({ createdAt: -1 })
+      .populate("manager", "name email phoneNumber")
+      .populate("employees", "name email phoneNumber");
 
     // if there are no pumps return error
     if (pumps.length === 0) {
@@ -182,8 +188,13 @@ export const getEmployeeListByPump = async (req, res) => {
   }
 };
 
+// @desc get list of all employees assigned to a specific pump
+// @route /api/pump/removeEmployeeFromPump
+// @access Admin
 export const removeEmployeeFromPump = async (req, res) => {
   const { pumpId, employeeEmail } = req.body;
+
+  console.log(employeeEmail);
 
   try {
     // find the pump in the pump collection
@@ -193,7 +204,7 @@ export const removeEmployeeFromPump = async (req, res) => {
       return res.status(404).json({ message: "Pump not found" });
     }
 
-    const employee = await Employee.find({ email: employeeEmail });
+    const employee = await Employee.findOne({ email: employeeEmail });
 
     if (!employee) {
       return res.status(404).json({ message: "Employee does not exist" });

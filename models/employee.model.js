@@ -32,7 +32,6 @@ const employeeSchema = new mongoose.Schema(
     pumpId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Pump",
-      required: true,
     },
     isVerified: {
       type: Boolean,

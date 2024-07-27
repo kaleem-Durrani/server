@@ -12,6 +12,7 @@ import employeeRoutes from "./routes/employee.routes.js";
 import transactionRoutes from "./routes/transaction.routes.js";
 import fundsTransferRoutes from "./routes/fundsTransfer.routes.js";
 import topUpRoutes from "./routes/topUp.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 import connectToMongoDB from "./db/connectToMongoDB.js";
 
@@ -33,6 +34,7 @@ app.use("/api/employee", employeeRoutes);
 app.use("/api/transaction", transactionRoutes);
 app.use("/api/fundsTransfer", fundsTransferRoutes);
 app.use("/api/topUp", topUpRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.get("/", (req, res) => {
   res.send("Hello World");

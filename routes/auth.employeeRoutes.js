@@ -24,9 +24,9 @@ const signupValidation = [
     .isString()
     .isIn(["manager", "refueler"])
     .withMessage("Employee type is required, and must be manager or employee"),
-  body("pumpId")
-    .isString()
-    .withMessage("pumpId is required obtain it from your manager"),
+  // body("pumpId")
+  //   .isString()
+  //   .withMessage("pumpId is required obtain it from your manager"),
   //   body("cnic").optional().isString().withMessage("CNIC must be a string"),
 ];
 

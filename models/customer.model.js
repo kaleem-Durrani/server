@@ -21,11 +21,18 @@ const customerSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    // cnic: {
-    //   type: String,
-    //   unique: true,
-    //   sparse: true, // Allows unique field to be null or empty
-    // },
+    loyaltyPoints: [
+      {
+        pumpId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Pump",
+        },
+        points: {
+          type: Number,
+          default: 0,
+        },
+      },
+    ],
     balance: {
       type: Number,
       default: 0,

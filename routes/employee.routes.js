@@ -43,5 +43,5 @@ router.post(
 );
 
 // @access Manager
-router.get("/employeeList", protectEmployeeRoute, getEmployeeList);
+router.get("/employeeListByManager", protectEmployeeRoute, getEmployeeList);
 export default router;

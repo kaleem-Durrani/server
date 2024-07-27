@@ -20,15 +20,8 @@ export const signupEmployee = async (req, res) => {
   }
 
   try {
-    const {
-      name,
-      email,
-      password,
-      confirmPassword,
-      phoneNumber,
-      type,
-      pumpId,
-    } = req.body;
+    const { name, email, password, confirmPassword, phoneNumber, type } =
+      req.body;
 
     if (password !== confirmPassword) {
       return res.status(400).json({ error: "Passwords do not match" });
@@ -70,7 +63,6 @@ export const signupEmployee = async (req, res) => {
         existingEmployee.password = hashedPassword;
         existingEmployee.phoneNumber = phoneNumber;
         existingEmployee.type = type;
-        existingEmployee.pumpId = pumpId;
         existingEmployee.otp = otp;
         existingEmployee.otpExpiry = otpExpiry;
 
@@ -92,7 +84,6 @@ export const signupEmployee = async (req, res) => {
       password: hashedPassword,
       phoneNumber,
       type,
-      pumpId,
       otp,
       otpExpiry,
     });
@@ -107,7 +98,7 @@ export const signupEmployee = async (req, res) => {
     res.status(201).json({
       message: "Employee created successfully. OTP sent to email.",
       token,
-      employee: employeeResponse,
+      // employee: employeeResponse,
     });
   } catch (error) {
     console.error(error);
