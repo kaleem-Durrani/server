@@ -58,6 +58,12 @@ export const addManagerToPump = async (req, res) => {
       return res.status(404).json({ error: "Pump not found" });
     }
 
+    if (pump.manager) {
+      const oldManager = Employee.findById(pump.manager);
+      oldManager.isEmployed = false;
+      await oldManager.save();
+    }
+
     // Check if the employee exists
     const manager = await Employee.findOne({ email: managerEmail });
 
