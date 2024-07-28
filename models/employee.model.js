@@ -40,7 +40,7 @@ const employeeSchema = new mongoose.Schema(
     otp: {
       type: String,
     },
-    otpExpires: {
+    otpExpiry: {
       type: Date,
     },
   },

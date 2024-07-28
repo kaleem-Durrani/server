@@ -29,7 +29,10 @@ const validateAddPump = [
 // validate the body of add manager to pump api
 const validateAddManagerToPump = [
   body("pumpId").notEmpty().withMessage("Pump ID is required"),
-  body("employeeId").notEmpty().withMessage("Employee ID is required"),
+  body("managerEmail")
+    .notEmpty()
+    .isEmail()
+    .withMessage("Manager email is required"),
 ];
 
 const validateAddEmployeeToPump = [

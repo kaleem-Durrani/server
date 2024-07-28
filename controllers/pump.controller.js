@@ -12,9 +12,7 @@ export const addPump = async (req, res) => {
 
     errors
       .array()
-      .forEach(
-        (error) => (errorMsg += `for: ${error.path}, ${error.message} \n`)
-      );
+      .forEach((error) => (errorMsg += `for: ${error.path}, ${error.msg} \n`));
     return res.status(400).json({ error: errorMsg });
   }
 
@@ -59,8 +57,9 @@ export const addManagerToPump = async (req, res) => {
     }
 
     if (pump.manager) {
-      const oldManager = Employee.findById(pump.manager);
+      const oldManager = await Employee.findById(pump.manager);
       oldManager.isEmployed = false;
+      oldManager.pumpId = undefined;
       await oldManager.save();
     }
 
@@ -88,10 +87,14 @@ export const addManagerToPump = async (req, res) => {
     // Update the pump's manager field
     pump.manager = manager._id;
     manager.isEmployed = true;
+    manager.pumpId = pump._id;
+    const managerName = manager.name;
 
     Promise.all([await manager.save(), await pump.save()]);
 
-    res.status(200).json({ message: "Manager assigned successfully", pump });
+    res
+      .status(200)
+      .json({ message: "Manager assigned successfully", managerName });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -142,6 +145,7 @@ export const addEmployeeToPump = async (req, res) => {
     // Add the employee to the pump's refuelers array
     pump.employees.push(employee._id);
     employee.isEmployed = true;
+    employee.pumpId = pump._id;
 
     Promise.all([await pump.save(), await employee.save()]);
 
@@ -159,8 +163,8 @@ export const getPumpList = async (req, res) => {
   try {
     const pumps = await Pump.find()
       .sort({ createdAt: -1 })
-      .populate("manager", "name email phoneNumber")
-      .populate("employees", "name email phoneNumber");
+      .populate("manager", "name email phoneNumber isVerified isEmployed")
+      .populate("employees", "name email phoneNumber isVerified isEmployed");
 
     // if there are no pumps return error
     if (pumps.length === 0) {
@@ -207,8 +211,6 @@ export const getEmployeeListByPump = async (req, res) => {
 export const removeEmployeeFromPump = async (req, res) => {
   const { pumpId, employeeEmail } = req.body;
 
-  console.log(employeeEmail);
-
   try {
     // find the pump in the pump collection
     const pump = await Pump.findById(pumpId);
@@ -233,6 +235,7 @@ export const removeEmployeeFromPump = async (req, res) => {
     // remove the employeeId from the pump.employees array
     pump.employees.splice(index, 1);
     employee.isEmployed = false;
+    employee.pumpId = undefined;
 
     Promise.all([await pump.save(), await employee.save()]);
 

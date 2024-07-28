@@ -99,7 +99,7 @@ export const signupCustomer = async (req, res) => {
     // Send OTP email
     await sendEmail(email, "Your OTP Code", `Your OTP code is ${otp}`);
 
-    const token = generateToken(newCustomer._id, newCustomer.isVerified, res);
+    const token = generateToken(newCustomer._id, newCustomer.isVerified);
 
     res.status(201).json({
       message: "Customer created successfully. OTP sent to email.",
@@ -134,7 +134,7 @@ export const loginCustomer = async (req, res) => {
     }
     // console.log(customer);
 
-    const token = generateToken(customer._id, customer.isVerified, res);
+    const token = generateToken(customer._id, customer.isVerified);
 
     res.status(200).json({ message: "Login successful", token });
   } catch (error) {
@@ -153,7 +153,7 @@ export const logoutCustomer = (req, res) => {
 export const verifyOtpCustomer = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({ error: errors.array() });
   }
 
   const { otp } = req.body;
@@ -193,7 +193,7 @@ export const verifyOtpCustomer = async (req, res) => {
     customer.otpExpiry = null; // Clear the OTP expiry
     await customer.save();
 
-    const resToken = generateToken(customer._id, customer.isVerified, res);
+    const resToken = generateToken(customer._id, customer.isVerified);
 
     res.status(200).json({
       message: "Account verified successfully",

@@ -3,6 +3,7 @@ import { body } from "express-validator";
 import {
   loginEmployee,
   logoutEmployee,
+  requetsNewOtp,
   signupEmployee,
   verifyOtpEmployee,
 } from "../controllers/auth.employeeController.js";
@@ -51,5 +52,7 @@ router.post("/login", loginValidation, loginEmployee);
 router.post("/logout", logoutEmployee);
 
 router.post("/verify-otp", otpValidation, verifyOtpEmployee);
+
+router.get("/requestNewOtp", requetsNewOtp);
 
 export default router;

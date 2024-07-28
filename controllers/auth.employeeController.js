@@ -14,9 +14,15 @@ const generateOtp = () => {
 // signup needs work as to not sent otp until the previous one is expired
 export const signupEmployee = async (req, res) => {
   const errors = validationResult(req);
-
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    let errorMsg = "";
+
+    console.log(errors.array());
+
+    errors
+      .array()
+      .forEach((error) => (errorMsg += `for: ${error.path}, ${error.msg} \n`));
+    return res.status(400).json({ error: errorMsg });
   }
 
   try {
@@ -93,7 +99,11 @@ export const signupEmployee = async (req, res) => {
     // Send OTP email
     await sendEmail(email, "Your OTP Code", `Your OTP code is ${otp}`);
 
-    const token = generateToken(newEmployee._id, newEmployee.isVerified, res);
+    const token = generateToken(
+      newEmployee._id,
+      newEmployee.isVerified,
+      newEmployee.pumpId
+    );
 
     res.status(201).json({
       message: "Employee created successfully. OTP sent to email.",
@@ -105,10 +115,16 @@ export const signupEmployee = async (req, res) => {
     res.status(500).json({ error: "Internal Server error" });
   }
 };
+
 export const loginEmployee = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    let errorMsg = "";
+
+    errors
+      .array()
+      .forEach((error) => (errorMsg += `for: ${error.path}, ${error.msg} \n`));
+    return res.status(400).json({ error: errorMsg });
   }
 
   const { email, password } = req.body; // Ensure this line is as shown
@@ -129,7 +145,11 @@ export const loginEmployee = async (req, res) => {
 
     // console.log(employee);
 
-    const token = generateToken(employee._id, employee.isVerified, res);
+    const token = generateToken(
+      employee._id,
+      employee.isVerified,
+      employee.pumpId
+    );
 
     res.status(200).json({ message: "Login successful", token });
   } catch (error) {
@@ -145,7 +165,7 @@ export const logoutEmployee = async (req, res) => {
 export const verifyOtpEmployee = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    return res.status(400).json({ error: errors.array() });
   }
 
   const { otp } = req.body;
@@ -180,7 +200,68 @@ export const verifyOtpEmployee = async (req, res) => {
     employee.otpExpiry = null; // Clear the OTP expiry
     await employee.save();
 
-    res.status(200).json({ message: "Account verified successfully" });
+    const resToken = generateToken(
+      employee._id,
+      employee.isVerified,
+      employee.pumpId
+    );
+
+    res.status(200).json({
+      message: "Account verified successfully",
+      employee,
+      token: resToken,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+
+export const requetsNewOtp = async (req, res) => {
+  console.log("new otp requested");
+
+  const authHeader = req.header("Authorization");
+  if (!authHeader) {
+    return res.status(401).json({ error: "Access denied. No token provided." });
+  }
+  const token = authHeader.replace("Bearer ", "");
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId;
+
+    const employee = await Employee.findById(userId);
+    if (!employee) {
+      return res.status(400).json({ error: "Invalid token or user not found" });
+    }
+
+    if (employee.isVerified) {
+      return res.status(400).json({ error: "Account is already verified" });
+    }
+
+    // check for otp expiry if otp not expired return error
+    if (employee.otpExpiry > Date.now()) {
+      const remainingTime = (employee.otpExpiry - Date.now()) / 1000;
+      return res.status(400).json({
+        error: `OTP already sent. Try again in ${Math.ceil(
+          remainingTime
+        )} seconds`,
+      });
+    }
+
+    // Generate OTP
+    const otp = generateOtp();
+    employee.otp = otp;
+    employee.otpExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes from now
+
+    await employee.save();
+
+    // Send OTP email
+    await sendEmail(employee.email, "Your OTP Code", `Your OTP code is ${otp}`);
+
+    res
+      .status(200)
+      .json({ message: `New OTP sent to email. \n${employee.email}` });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server error" });
