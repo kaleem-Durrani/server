@@ -78,7 +78,12 @@ export const changePassword = async (req, res) => {
   // validate the request
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    let errorMsg = "";
+
+    errors
+      .array()
+      .forEach((error) => (errorMsg += `for: ${error.path}, ${error.msg} \n`));
+    return res.status(400).json({ error: errorMsg });
   }
 
   const customerId = req.customer.userId;

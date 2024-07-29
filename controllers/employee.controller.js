@@ -73,26 +73,31 @@ export const updateProfile = async (req, res) => {
 export const changePassword = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    let errorMsg = "";
+
+    errors
+      .array()
+      .forEach((error) => (errorMsg += `for: ${error.path}, ${error.msg} \n`));
+    return res.status(400).json({ error: errorMsg });
   }
 
   const employeeId = req.employee.userId;
 
-  const { oldPassword, newPassword } = req.body;
+  const { currentPassword, newPassword } = req.body;
 
   try {
     // find employee in the database
     const employee = await Employee.findById(employeeId);
 
     if (!employee) {
-      return res.status(404).json({ message: "Employee not found" });
+      return res.status(404).json({ error: "Employee not found" });
     }
 
     // compare old password with the one in the database
-    const isMatch = await employee.comparePassword(oldPassword);
+    const isMatch = await bcrypt.compare(currentPassword, employee.password);
 
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid old password" });
+      return res.status(400).json({ error: "Invalid old password" });
     }
 
     // hash the new password
@@ -115,29 +120,27 @@ export const changePassword = async (req, res) => {
 // @access manager
 export const getEmployeeList = async (req, res) => {
   // Get employee id
-  const employeeId = req.employee.userId;
+  const managerId = req.employee.userId;
 
   try {
     // Find employee in the database
-    const employee = await Employee.findById(employeeId);
+    const manager = await Employee.findById(managerId);
 
     // Check if employee type is manager
-    if (employee.type !== "manager") {
-      return res.status(403).json({ message: "Unauthorized access" });
+    if (manager.type !== "manager") {
+      return res.status(403).json({ error: "Unauthorized access" });
     }
 
     // Find pump where manager is the employee
     // it returns a list
-    const pumps = await Pump.find({ manager: employeeId }).populate(
+    const pumps = await Pump.find({ manager: managerId }).populate(
       "employees",
-      "name email"
+      "name email phoneNumber createdAt"
     );
 
     // If no pumps found, this manager is not assigned to a pump
     if (pumps.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "Manager not assigned to a pump" });
+      return res.status(404).json({ error: "Manager not assigned to a pump" });
     }
 
     // Since a manager can manage only one pump, get the employees of the first pump

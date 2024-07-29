@@ -44,7 +44,12 @@ export const addPump = async (req, res) => {
 export const addManagerToPump = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    let errorMsg = "";
+
+    errors
+      .array()
+      .forEach((error) => (errorMsg += `for: ${error.path}, ${error.msg} \n`));
+    return res.status(400).json({ error: errorMsg });
   }
 
   const { pumpId, managerEmail } = req.body;
@@ -107,7 +112,12 @@ export const addManagerToPump = async (req, res) => {
 export const addEmployeeToPump = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    let errorMsg = "";
+
+    errors
+      .array()
+      .forEach((error) => (errorMsg += `for: ${error.path}, ${error.msg} \n`));
+    return res.status(400).json({ error: errorMsg });
   }
 
   const { pumpId, employeeEmail } = req.body;
@@ -242,6 +252,98 @@ export const removeEmployeeFromPump = async (req, res) => {
     res.status(200).json({ message: "Employee removed successfully", pump });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc manager adds an employee to his own pump
+// @route /api/pump/addEmployeeToPumpByManager
+// @access manager
+export const addEmployeeToPumpByManager = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    let errorMsg = "";
+
+    errors
+      .array()
+      .forEach((error) => (errorMsg += `for: ${error.path}, ${error.msg} \n`));
+    return res.status(400).json({ error: errorMsg });
+  }
+
+  const managerId = req.employee.userId;
+  const { employeeEmail } = req.body;
+
+  try {
+    // find the manager
+    const manager = await Employee.findById(managerId);
+
+    // these checks are not required since the protect employee route already checks these conditions
+    // if (!manager) {
+    //   return res.status(404).json({ error: "Manager not found" });
+    // }
+
+    // if (!manager.isVerified) {
+    //   return res.status(401).json({ error: "Manager not verified" });
+    // }
+
+    if (!manager.isEmployed) {
+      return res.status(403).json({ error: "Manager is not employed" });
+    }
+
+    if (manager.type === "refueler") {
+      return res
+        .status(403)
+        .json({ error: "refueler cannot assign employees" });
+    }
+
+    // Check if the employee exists
+    const employee = await Employee.findOne({ email: employeeEmail });
+
+    // make sure manager has not given his own email
+    if (manager.email === employeeEmail) {
+      return res
+        .status(403)
+        .json({ error: "You cannot assign yourself as an employee" });
+    }
+
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    if (!employee.isVerified) {
+      return res.status(401).json({ error: "Employee not verified" });
+    }
+
+    // if employee's type is manager
+    if (employee.type === "manager") {
+      return res
+        .status(403)
+        .json({ error: "Cannot assign manager as employee" });
+    }
+
+    if (employee.isEmployed) {
+      return res.status(403).json({
+        error:
+          "Employee is already assigned to a pump. \nDouble Check employees email, if problem persists.\nContact our admins",
+      });
+    }
+
+    // find the pump using manager.pumpId
+    const pump = await Pump.findById(manager.pumpId);
+    if (!pump) {
+      return res.status(404).json({ error: "Pump not found" });
+    }
+
+    // Add the employee to the pump's refuelers array
+    pump.employees.push(employee._id);
+    employee.isEmployed = true;
+    employee.pumpId = pump._id;
+
+    Promise.all([await pump.save(), await employee.save()]);
+
+    res.status(200).json({ message: "Employee added successfully" });
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

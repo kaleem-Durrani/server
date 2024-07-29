@@ -1,6 +1,7 @@
 import express from "express";
 import {
   addEmployeeToPump,
+  addEmployeeToPumpByManager,
   addManagerToPump,
   addPump,
   getEmployeeListByPump,
@@ -10,6 +11,7 @@ import {
 import protectAdminRoute from "../middleware/protectAdminRoute.js";
 
 import { body } from "express-validator";
+import protectEmployeeRoute from "../middleware/protectEmployeeRoute.js";
 
 const router = express.Router();
 
@@ -44,8 +46,17 @@ const validateAddEmployeeToPump = [
   // Add any other validation rules as needed
 ];
 
+const validateAddEmployeeToPumpByManager = [
+  body("employeeEmail")
+    .notEmpty()
+    .isEmail()
+    .withMessage("Employee email is required"),
+];
+
+// @access Admin
 router.post("/addPump", validateAddPump, protectAdminRoute, addPump);
 
+// @access Admin
 router.post(
   "/addManagerToPump",
   validateAddManagerToPump,
@@ -53,6 +64,7 @@ router.post(
   addManagerToPump
 );
 
+// @access Admin
 router.post(
   "/addEmployeeToPump",
   validateAddEmployeeToPump,
@@ -60,15 +72,25 @@ router.post(
   addEmployeeToPump
 );
 
+// @access Admin
 router.get("/getPumpList", protectAdminRoute, getPumpList);
 
 // @access Admin
 router.post("employeeListByPump", protectAdminRoute, getEmployeeListByPump);
 
+// @access Admin
 router.post(
   "/removeEmployeeFromPump",
   protectAdminRoute,
   removeEmployeeFromPump
+);
+
+// @access Manager
+router.post(
+  "/addEmployeeToPumpByManager",
+  validateAddEmployeeToPumpByManager,
+  protectEmployeeRoute,
+  addEmployeeToPumpByManager
 );
 
 export default router;

@@ -53,7 +53,7 @@ router.get(
   getRefuelerTransactionHistory
 );
 
-router.get(
+router.post(
   "/employeeHistory",
   protectEmployeeRoute,
   getEmployeeTransactionHistory

@@ -52,24 +52,26 @@ export const createTransaction = async (req, res) => {
     // Find customer in the database
     const customer = await Customer.findById(customerId);
     if (!customer) {
-      return res.status(404).json({ message: "Customer not found" });
+      return res.status(404).json({ error: "Customer not found" });
     }
 
     // Check if customer does not have enough balance
     if (paymentMethod === "app" && amount > customer.balance) {
-      return res.status(400).json({ message: "Insufficient funds" });
+      return res.status(403).json({
+        error: "Customer has Insufficient funds, Can not pay with app",
+      });
     }
 
     // Find employee in the database
     const employee = await Employee.findById(employeeId);
     if (!employee) {
-      return res.status(404).json({ message: "Employee not found" });
+      return res.status(404).json({ error: "Employee not found" });
     }
 
     // Find pump in the database
     const pump = await Pump.findById(employee.pumpId);
     if (!pump) {
-      return res.status(404).json({ message: "Pump not found" });
+      return res.status(404).json({ error: "Pump not found" });
     }
 
     if (paymentMethod === "app") {
@@ -136,10 +138,8 @@ export const getRefuelerTransactionHistory = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate("customerId", "name");
 
-    if (!refuelerTransactions) {
-      return res
-        .status(404)
-        .json({ message: "No refueler transactions found" });
+    if (refuelerTransactions.length === 0) {
+      return res.status(404).json({ error: "No refueler transactions found" });
     }
 
     // return the refueler transaction history
@@ -169,16 +169,15 @@ export const getEmployeeTransactionHistory = async (req, res) => {
     // Check if manager type is not manager
     if (managerEmployee.type !== "manager") {
       return res.status(403).json({
-        message:
-          "Access denied! Employee History only available to the manager",
+        error: "Access denied! Employee History only available to the manager",
       });
     }
 
     // Find employee in the employee table
-    const employee = await Employee.findById(employeeId).lean();
+    const employee = await Employee.findById(employeeId);
     // Check if employee exists
     if (!employee) {
-      return res.status(404).json({ message: "Employee not found" });
+      return res.status(404).json({ error: "Employee not found" });
     }
 
     // Find transactions in the Transaction model
@@ -191,9 +190,7 @@ export const getEmployeeTransactionHistory = async (req, res) => {
 
     // If no transactions are found
     if (employeeTransactions.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No employee transactions found" });
+      return res.status(404).json({ error: "No employee transactions found" });
     }
 
     // Return the employee transaction history
