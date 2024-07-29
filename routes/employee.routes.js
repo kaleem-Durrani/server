@@ -3,10 +3,12 @@ import { body } from "express-validator";
 import protectEmployeeRoute from "../middleware/protectEmployeeRoute.js";
 import {
   changePassword,
+  getAllEmployeesList,
   getEmployeeList,
   getEmployeeProfile,
   updateProfile,
 } from "../controllers/employee.controller.js";
+import protectAdminRoute from "../middleware/protectAdminRoute.js";
 
 const router = express.Router();
 
@@ -44,4 +46,8 @@ router.post(
 
 // @access Manager
 router.get("/employeeListByManager", protectEmployeeRoute, getEmployeeList);
+
+// @access admins
+router.get("/getAllEmployeesList", protectAdminRoute, getAllEmployeesList);
+
 export default router;

@@ -6,6 +6,9 @@ import bcrypt from "bcryptjs";
 
 import { validationResult } from "express-validator";
 
+// @desc customer gets his profile info after login or refresh
+// @route /api/customer/profile
+// @access customer
 export const getCustomerProfile = async (req, res) => {
   // retreive the customer id from the protecgt customer middleware
   const customerId = req.customer.userId;
@@ -32,7 +35,9 @@ export const getCustomerProfile = async (req, res) => {
   }
 };
 
-// update profile / details
+// @desc customer updates his profile info while logged in
+// @route /api/customer/updateProfile
+// @access customer
 export const updateCustomerProfile = async (req, res) => {
   // validate the request
   const errors = validationResult(req);
@@ -74,6 +79,9 @@ export const updateCustomerProfile = async (req, res) => {
   }
 };
 
+// @desc customer changes his password while logged in
+// @route /api/customer/changePassword
+// @access customer
 export const changePassword = async (req, res) => {
   // validate the request
   const errors = validationResult(req);
@@ -116,6 +124,29 @@ export const changePassword = async (req, res) => {
     res
       .status(200)
       .json({ message: "Password updated successfully", customer });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc admin gets list of all the customers in the database
+// @route /api/customer/getCustomerList
+// @access admin
+export const getCustomerList = async (req, res) => {
+  try {
+    // find all the customers in the database
+    const customers = await Customer.find({});
+
+    // if there are no customers in the database return error
+    if (customers.length === 0) {
+      return res.status(404).json({ error: "No customers found" });
+    }
+
+    // return the list of customers
+    res
+      .status(200)
+      .json({ message: "Customers retrieved successfully", customers });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal Server Error" });

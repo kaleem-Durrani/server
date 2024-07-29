@@ -3,9 +3,11 @@ import { body } from "express-validator";
 import protectCustomerRoute from "../middleware/protectCustomerRoute.js";
 import {
   changePassword,
+  getCustomerList,
   getCustomerProfile,
   updateCustomerProfile,
 } from "../controllers/customer.controller.js";
+import protectAdminRoute from "../middleware/protectAdminRoute.js";
 
 const router = express.Router();
 
@@ -27,15 +29,21 @@ const changePasswordValidation = [
     .withMessage("Passwords do not match"),
 ];
 
+// @access customer
 router.get("/profile", protectCustomerRoute, getCustomerProfile);
 
+// @access customer
 router.post("/updateProfile", protectCustomerRoute, updateCustomerProfile);
 
+// @access customer
 router.post(
   "/changePassword",
   changePasswordValidation,
   protectCustomerRoute,
   changePassword
 );
+
+// @access Admin
+router.get("/getCustomerList", protectAdminRoute, getCustomerList);
 
 export default router;

@@ -115,7 +115,7 @@ export const changePassword = async (req, res) => {
   }
 };
 
-// @desc get list of all employees
+// @desc get list of all employees in a single pump by manager
 // @route /api/employee/employeeList
 // @access manager
 export const getEmployeeList = async (req, res) => {
@@ -147,6 +147,30 @@ export const getEmployeeList = async (req, res) => {
     const employees = pumps[0].employees;
 
     // Return list of employees assigned to the pump
+    res
+      .status(200)
+      .json({ message: "Employee list successfully retrieved", employees });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc get list of all employees in the database
+// @route /api/employee/getAllEmployeesList
+// @access admin
+export const getAllEmployeesList = async (req, res) => {
+  try {
+    // Find all employees in the database
+    const employees = await Employee.find();
+
+    // return error if no employees
+
+    if (employees.length === 0) {
+      return res.status(404).json({ error: "No employees found" });
+    }
+
+    // Return list of employees
     res
       .status(200)
       .json({ message: "Employee list successfully retrieved", employees });
