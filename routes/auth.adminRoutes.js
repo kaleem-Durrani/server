@@ -1,6 +1,7 @@
 import express from "express";
 import { body } from "express-validator";
 import {
+  checkAuth,
   loginAdmin,
   logoutAdmin,
 } from "../controllers/auth.adminController.js";
@@ -16,5 +17,7 @@ const loginValidation = [
 router.post("/login", loginValidation, loginAdmin);
 
 router.post("/logout", logoutAdmin);
+
+router.get("/checkAuth", checkAuth);
 
 export default router;

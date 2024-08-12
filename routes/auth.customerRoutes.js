@@ -3,7 +3,9 @@ import { body } from "express-validator";
 import {
   loginCustomer,
   logoutCustomer,
+  requestPasswordReset,
   requetsNewOtp,
+  resetPassword,
   signupCustomer,
   verifyOtpCustomer,
 } from "../controllers/auth.customerController.js";
@@ -12,8 +14,16 @@ const router = express.Router();
 
 // Validation rules for signup
 const signupValidation = [
-  body("name").notEmpty().withMessage("Name is required"),
-  body("email").isEmail().withMessage("Valid email is required"),
+  body("name")
+    .trim()
+    .notEmpty()
+    .isString()
+    .withMessage("Customer Name is required"),
+  body("email")
+    .trim()
+    .notEmpty()
+    .isEmail()
+    .withMessage("Valid email is required"),
   body("password")
     .isLength({ min: 6 })
     .withMessage("Password must be at least 6 characters"),
@@ -37,6 +47,23 @@ const otpValidation = [
     .withMessage("OTP must be 6 characters long"),
 ];
 
+const requestPasswordResetValidation = [
+  body("email").isEmail().withMessage("Valid email is required"),
+];
+
+const resetPasswordValidation = [
+  body("email").isEmail().withMessage("Valid email is required"),
+  body("newPassword")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters"),
+  body("confirmNewPassword")
+    .isLength({ min: 6 })
+    .withMessage("Confirm password must be at least 6 characters"),
+  body("confirmNewPassword")
+    .custom((value, { req }) => value === req.body.newPassword)
+    .withMessage("Passwords do not match"),
+];
+
 // Define routes with validation
 router.post("/signup", signupValidation, signupCustomer);
 
@@ -47,5 +74,13 @@ router.post("/logout", logoutCustomer);
 router.post("/verify-otp", otpValidation, verifyOtpCustomer);
 
 router.get("/requestNewOtp", requetsNewOtp);
+
+router.post(
+  "/requestPasswordReset",
+  requestPasswordResetValidation,
+  requestPasswordReset
+);
+
+router.post("/resetPassword", resetPasswordValidation, resetPassword);
 
 export default router;

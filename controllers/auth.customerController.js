@@ -11,11 +11,18 @@ const generateOtp = () => {
   return crypto.randomInt(100000, 1000000).toString();
 };
 
-// Signup controller function
+// @desc Signup api for customer
+// @route /api/auth/customer/signup
+// @access customer
 export const signupCustomer = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    let errorMsg = "";
+
+    errors
+      .array()
+      .forEach((error) => (errorMsg += `for: ${error.path}, ${error.msg} \n`));
+    return res.status(400).json({ error: errorMsg });
   }
 
   try {
@@ -112,12 +119,19 @@ export const signupCustomer = async (req, res) => {
   }
 };
 
-// Login controller function
+// @desc Login api for customer
+// @route /api/auth/customer/login
+// @access customer
 export const loginCustomer = async (req, res) => {
   // console.log("login initiated");
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    let errorMsg = "";
+
+    errors
+      .array()
+      .forEach((error) => (errorMsg += `for: ${error.path}, ${error.msg} \n`));
+    return res.status(400).json({ error: errorMsg });
   }
 
   const { email, password } = req.body; // Ensure this line is as shown
@@ -143,17 +157,26 @@ export const loginCustomer = async (req, res) => {
   }
 };
 
-// Logout controller function
+// @desc Suser logs out (this wont actually be used since customers are in a react native app they will simply clear the expo secure storage on logout)
+// @route /api/auth/customer/signup
+// @access customer
 export const logoutCustomer = (req, res) => {
   // Here you can handle session or token invalidation if you're using sessions or JWT
   res.status(200).json({ message: "Logout successful" });
 };
 
-// Verify OTP controller function
+// @desc customers verify the otp when a new accout is created
+// @route /api/auth/customer/verify-otp
+// @access customer
 export const verifyOtpCustomer = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ error: errors.array() });
+    let errorMsg = "";
+
+    errors
+      .array()
+      .forEach((error) => (errorMsg += `for: ${error.path}, ${error.msg} \n`));
+    return res.status(400).json({ error: errorMsg });
   }
 
   const { otp } = req.body;
@@ -171,7 +194,7 @@ export const verifyOtpCustomer = async (req, res) => {
 
     const customer = await Customer.findById(userId);
     if (!customer) {
-      return res.status(400).json({ error: "Invalid token or user not found" });
+      return res.status(404).json({ error: "Customer not found" });
     }
 
     if (customer.isVerified) {
@@ -206,9 +229,10 @@ export const verifyOtpCustomer = async (req, res) => {
   }
 };
 
-// request new otp if current expired or not received
+// @desc customers request new OTP if the current one is expired
+// @route /api/auth/customer/requestNewOtp"
+// @access customer
 export const requetsNewOtp = async (req, res) => {
-  console.log("new otp requested");
   const authHeader = req.header("Authorization");
   if (!authHeader) {
     return res.status(401).json({ error: "Access denied. No token provided." });
@@ -246,16 +270,146 @@ export const requetsNewOtp = async (req, res) => {
     customer.otp = otp;
     customer.otpExpiry = otpExpiry;
 
-    await customer.save();
+    Promise.all([
+      await customer.save(),
+      await sendEmail(
+        customer.email,
+        "Your OTP Code",
+        `Your OTP code is ${otp}`
+      ),
+    ]);
 
-    // Send OTP email
-    await sendEmail(customer.email, "Your OTP Code", `Your OTP code is ${otp}`);
-
-    console.log("new otp sent");
+    // console.log("new otp sent");
 
     res
       .status(200)
       .json({ message: `New OTP sent to email. \n${customer.email}` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+
+// @desc customers request new OTP if the current one is expired
+// @route /api/auth/customer/requestPasswordReset
+// @access customer
+export const requestPasswordReset = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    let errorMsg = "";
+
+    errors
+      .array()
+      .forEach((error) => (errorMsg += `for: ${error.path}, ${error.msg} \n`));
+    return res.status(400).json({ error: errorMsg });
+  }
+
+  const { email } = req.body;
+
+  try {
+    const customer = await Customer.findOne({ email });
+    if (!customer) {
+      return res
+        .status(400)
+        .json({ error: "No customer found with this email" });
+    }
+
+    // if customer is unverified
+    if (!customer.isVerified) {
+      return res.status(400).json({
+        error:
+          "Account is not verified. Please verify your account first, or signup Again",
+      });
+    }
+
+    // check if there is customer.otp and customer.isExpiry is not expired
+    if (customer.otp && customer.otpExpiry > Date.now()) {
+      const remainingTime = (customer.otpExpiry - Date.now()) / 1000;
+      return res.status(400).json({
+        error: `Password reset request already sent, OTP has been provided. Proceed to the next page to send the otp or Try again in ${Math.ceil(
+          remainingTime
+        )} seconds`,
+      });
+    }
+
+    // Generate new OTP
+    const otp = generateOtp();
+    const otpExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes from now
+
+    customer.otp = otp;
+    customer.otpExpiry = otpExpiry;
+
+    Promise.all([
+      await customer.save(),
+      await sendEmail(
+        customer.email,
+        "Password Reset OTP Code",
+        `Your OTP code is ${otp}`
+      ),
+    ]);
+
+    res.status(200).json({
+      message: `Password reset OTP sent to email. \n${customer.email}`,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server error" });
+  }
+};
+
+// @desc customers reset the password after requesting a password reset
+// @route /api/auth/customer/resetPassword
+// @access customer
+export const resetPassword = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    let errorMsg = "";
+
+    errors
+      .array()
+      .forEach((error) => (errorMsg += `for: ${error.path}, ${error.msg} \n`));
+    return res.status(400).json({ error: errorMsg });
+  }
+
+  const { email, newPassword, otp } = req.body;
+
+  try {
+    const customer = await Customer.findOne({ email });
+    if (!customer) {
+      return res
+        .status(400)
+        .json({ error: "No customer found with this email" });
+    }
+
+    // if !customer.otp then give error
+    if (!customer.otp) {
+      return res
+        .status(400)
+        .json({ error: "Password reset has not been requested" });
+    }
+
+    // if customer.otp is expired then give error
+    if (customer.otpExpiry < Date.now()) {
+      return res.status(400).json({
+        error: "OTP has expired, \nPlease Request another",
+      });
+    }
+
+    // validate otp
+    if (customer.otp !== otp) {
+      return res.status(400).json({ error: "Invalid OTP" });
+    }
+
+    // hash the new password
+    const salt = await bcrypt.genSalt(10);
+    customer.password = await bcrypt.hash(newPassword, salt);
+
+    await customer.save();
+
+    res.status(200).json({
+      message:
+        "Password reset successful, Please go back to the Sign in page to Login again",
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server error" });

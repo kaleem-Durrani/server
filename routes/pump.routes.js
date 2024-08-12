@@ -6,12 +6,14 @@ import {
   addPump,
   getEmployeeListByPump,
   getPumpList,
+  getPumpLocations,
   removeEmployeeFromPump,
 } from "../controllers/pump.controller.js";
 import protectAdminRoute from "../middleware/protectAdminRoute.js";
 
 import { body } from "express-validator";
 import protectEmployeeRoute from "../middleware/protectEmployeeRoute.js";
+import protectCustomerRoute from "../middleware/protectCustomerRoute.js";
 
 const router = express.Router();
 
@@ -92,5 +94,8 @@ router.post(
   protectEmployeeRoute,
   addEmployeeToPumpByManager
 );
+
+// @access Customer
+router.get("/pumpLocations", protectCustomerRoute, getPumpLocations);
 
 export default router;

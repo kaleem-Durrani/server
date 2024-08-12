@@ -347,3 +347,25 @@ export const addEmployeeToPumpByManager = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+// @desc customers map locator screen gets all pump coordinates
+// @route /api/pump/pumpLocations
+// @access customer
+export const getPumpLocations = async (req, res) => {
+  try {
+    const pumps = await Pump.find().select("_id name coordinates");
+
+    //  return error if pumps legnth is 0
+
+    if (pumps.length === 0) {
+      return res.status(404).json({ error: "No pumps found" });
+    }
+
+    res
+      .status(200)
+      .json({ message: "Pump locations retrieved successfully", pumps });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
