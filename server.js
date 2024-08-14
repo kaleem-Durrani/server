@@ -2,11 +2,12 @@ import express from "express";
 import { config } from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import Customer from "./models/customer.model.js"; // Import Customer model
+import connectToMongoDB from "./db/connectToMongoDB.js";
 
 import authCustomerRoutes from "./routes/auth.customerRoutes.js";
 import authEmployeeRoutes from "./routes/auth.employeeRoutes.js";
 import authAdminRoutes from "./routes/auth.adminRoutes.js";
-
 import pumpRoutes from "./routes/pump.routes.js";
 import customerRoutes from "./routes/customer.routes.js";
 import employeeRoutes from "./routes/employee.routes.js";
@@ -14,8 +15,6 @@ import transactionRoutes from "./routes/transaction.routes.js";
 import fundsTransferRoutes from "./routes/fundsTransfer.routes.js";
 import topUpRoutes from "./routes/topUp.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
-
-import connectToMongoDB from "./db/connectToMongoDB.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -47,6 +46,23 @@ app.use("/api/admin", adminRoutes);
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
+
+// Cleanup function to delete unverified customers
+const deleteUnverifiedCustomers = async () => {
+  try {
+    const expiryDate = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
+    await Customer.deleteMany({
+      isVerified: false,
+      createdAt: { $lt: expiryDate },
+    });
+    console.log("Deleted unverified customers older than 24 hours.");
+  } catch (error) {
+    console.error("Error deleting unverified customers:", error);
+  }
+};
+
+// Schedule the cleanup task to run every 24 hours
+setInterval(deleteUnverifiedCustomers, 24 * 60 * 60 * 1000); // Run once every 24 hours
 
 app.listen(PORT, () => {
   connectToMongoDB();
