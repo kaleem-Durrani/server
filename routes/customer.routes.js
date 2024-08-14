@@ -6,6 +6,8 @@ import {
   getCustomerList,
   getCustomerProfile,
   updateCustomerProfile,
+  uploadImage,
+  updatePushToken,
 } from "../controllers/customer.controller.js";
 import protectAdminRoute from "../middleware/protectAdminRoute.js";
 
@@ -29,6 +31,10 @@ const changePasswordValidation = [
     .withMessage("Passwords do not match"),
 ];
 
+const updatePushTokenValidation = [
+  body("pushToken").notEmpty().withMessage("Push token is required"),
+];
+
 // @access customer
 router.get("/profile", protectCustomerRoute, getCustomerProfile);
 
@@ -43,7 +49,18 @@ router.post(
   changePassword
 );
 
+// @access customer
+router.post("/image", protectCustomerRoute, uploadImage);
+
 // @access Admin
 router.get("/getCustomerList", protectAdminRoute, getCustomerList);
+
+// @access customer
+router.post(
+  "/updatePushToken",
+  updatePushTokenValidation,
+  protectCustomerRoute,
+  updatePushToken
+);
 
 export default router;

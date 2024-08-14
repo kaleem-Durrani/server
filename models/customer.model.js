@@ -21,6 +21,9 @@ const customerSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    imageUrl: {
+      type: String,
+    },
     loyaltyPoints: [
       {
         pumpId: {
@@ -50,6 +53,9 @@ const customerSchema = new mongoose.Schema(
     },
     otpExpiry: {
       type: Date,
+    },
+    pushToken: {
+      type: String,
     },
   },
   { timestamps: true }

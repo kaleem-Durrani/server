@@ -2,6 +2,7 @@ import Employee from "../models/employee.model.js";
 import { validationResult } from "express-validator";
 import Pump from "../models/pump.model.js";
 import bcrypt from "bcryptjs";
+import { uploadToCloudinary } from "../utils/cloudinary.js";
 
 import Customer from "../models/customer.model.js";
 import Transaction from "../models/transaction.model.js";
@@ -176,6 +177,47 @@ export const getAllEmployeesList = async (req, res) => {
       .json({ message: "Employee list successfully retrieved", employees });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const uploadImage = async (req, res) => {
+  try {
+    const employee = req.employee;
+    const { image } = req.body;
+    const { url } = await uploadToCloudinary(image);
+    const updatedEmployee = await Employee.findById(employee.userId);
+
+    updatedEmployee.imageUrl = url;
+    await updatedEmployee.save();
+
+    res.status(200).json({
+      message: "Image updated successfully",
+      url: url,
+    });
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc update push token
+// @route /api/employee/updatePushToken
+// @access employees (refueler and manager)
+export const updatePushToken = async (req, res) => {
+  const employee = req.employee;
+  const { pushToken } = req.body;
+
+  try {
+    const updatedEmployee = await Employee.findByIdAndUpdate(employee.userId, {
+      pushToken,
+    });
+
+    res.status(200).json({
+      message: "Push token updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating push token:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
