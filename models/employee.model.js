@@ -20,6 +20,9 @@ const employeeSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    imageUrl: {
+      type: String,
+    },
     type: {
       type: String,
       enum: ["manager", "refueler"],
@@ -42,6 +45,9 @@ const employeeSchema = new mongoose.Schema(
     },
     otpExpiry: {
       type: Date,
+    },
+    pushToken: {
+      type: String,
     },
   },
   { timestamps: true }

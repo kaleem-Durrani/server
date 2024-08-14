@@ -7,6 +7,8 @@ import {
   getEmployeeList,
   getEmployeeProfile,
   updateProfile,
+  uploadImage,
+  updatePushToken,
 } from "../controllers/employee.controller.js";
 import protectAdminRoute from "../middleware/protectAdminRoute.js";
 
@@ -49,5 +51,11 @@ router.get("/employeeListByManager", protectEmployeeRoute, getEmployeeList);
 
 // @access admins
 router.get("/getAllEmployeesList", protectAdminRoute, getAllEmployeesList);
+
+// @access employees (refueler and manager)
+router.post("/image", protectEmployeeRoute, uploadImage);
+
+// @access employees (refueler and manager)
+router.post("/updatePushToken", protectEmployeeRoute, updatePushToken);
 
 export default router;

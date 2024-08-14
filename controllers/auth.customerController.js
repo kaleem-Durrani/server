@@ -235,7 +235,7 @@ export const verifyOtpCustomer = async (req, res) => {
 export const requetsNewOtp = async (req, res) => {
   const authHeader = req.header("Authorization");
   if (!authHeader) {
-    return res.status(403).json({ error: "Access denied. No token provided." });
+    return res.status(401).json({ error: "Access denied. No token provided." });
   }
 
   const token = authHeader.replace("Bearer ", "");

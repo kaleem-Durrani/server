@@ -3,6 +3,7 @@ import Customer from "../models/customer.model.js";
 import Employee from "../models/employee.model.js";
 import Pump from "../models/pump.model.js";
 import { validationResult } from "express-validator";
+import { Expo } from "expo-server-sdk";
 
 // accessed by customers to view their transaction history
 export const getCustomerTransactionHistory = async (req, res) => {
@@ -33,96 +34,6 @@ export const getCustomerTransactionHistory = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-};
-
-// accessed by employees to create a transaction
-export const createTransaction = async (req, res) => {
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  const { amount, paymentMethod, fuelType, fuelAmount, customerId } = req.body;
-  const employeeId = req.employee.userId;
-
-  try {
-    // Find customer in the database
-    const customer = await Customer.findById(customerId);
-    if (!customer) {
-      return res.status(404).json({ error: "Customer not found" });
-    }
-
-    // Check if customer does not have enough balance
-    if (paymentMethod === "app" && amount > customer.balance) {
-      return res.status(403).json({
-        error: "Customer has Insufficient funds, Can not pay with app",
-      });
-    }
-
-    // Find employee in the database
-    const employee = await Employee.findById(employeeId);
-    if (!employee) {
-      return res.status(404).json({ error: "Employee not found" });
-    }
-
-    // Find pump in the database
-    const pump = await Pump.findById(employee.pumpId);
-    if (!pump) {
-      return res.status(404).json({ error: "Pump not found" });
-    }
-
-    if (paymentMethod === "app") {
-      // Subtract amount from customer balance
-      customer.balance -= amount;
-
-      // Add amount to pump balance (ensure you have a balance field in Pump schema)
-      pump.balance += amount;
-
-      // Create transaction
-      const transaction = new Transaction({
-        amount,
-        paymentMethod,
-        fuelType,
-        fuelAmount,
-        customerId,
-        pumpId: pump._id,
-        employeeId,
-      });
-
-      // Save transaction, customer, and pump to the database
-      await Promise.all([transaction.save(), customer.save(), pump.save()]);
-
-      res.status(200).json({
-        message: "Transaction successful, payment received through app",
-        transaction,
-      });
-    } else {
-      // If payment through cash
-      // Create transaction
-      const transaction = new Transaction({
-        amount,
-        paymentMethod,
-        fuelType,
-        fuelAmount,
-        customerId,
-        pumpId: pump._id,
-        employeeId,
-      });
-
-      // Save transaction
-      await transaction.save();
-
-      res.status(200).json({
-        message:
-          "Transaction successful, kindly take cash payment from customer",
-        transaction,
-      });
-    }
-  } catch (error) {
-    console.error(error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
@@ -197,6 +108,196 @@ export const getEmployeeTransactionHistory = async (req, res) => {
     res.status(200).json({
       message: "Employee transaction history successfully retrieved",
       transactions: employeeTransactions,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// accessed by employees to create a transaction
+export const createTransaction = async (req, res) => {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { amount, paymentMethod, fuelType, fuelAmount, customerId } = req.body;
+  const employeeId = req.employee.userId;
+
+  try {
+    // Find customer in the database
+    const customer = await Customer.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found" });
+    }
+
+    // Check if customer does not have enough balance
+    if (paymentMethod === "app" && amount > customer.balance) {
+      return res.status(403).json({
+        error: "Customer has Insufficient funds, Can not pay with app",
+      });
+    }
+
+    // Find employee in the database
+    const employee = await Employee.findById(employeeId);
+    if (!employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    // Find pump in the database
+    const pump = await Pump.findById(employee.pumpId);
+    if (!pump) {
+      return res.status(404).json({ error: "Pump not found" });
+    }
+
+    let transaction;
+
+    if (paymentMethod === "app") {
+      console.log(amount);
+      console.log(typeof amount);
+      console.log(Number(amount));
+
+      console.log(customer.balance);
+      console.log(pump.balance);
+
+      // Subtract amount from customer balance
+      customer.balance -= Number(amount);
+
+      // Add amount to pump balance (ensure you have a balance field in Pump schema)
+      pump.balance += Number(amount);
+
+      // Create transaction
+      transaction = new Transaction({
+        amount,
+        paymentMethod,
+        fuelType,
+        fuelAmount,
+        customerId,
+        pumpId: pump._id,
+        employeeId,
+      });
+
+      // Save transaction, customer, and pump to the database
+      await Promise.all([transaction.save(), customer.save(), pump.save()]);
+    } else {
+      // If payment through cash
+      // Create transaction
+      transaction = new Transaction({
+        amount,
+        paymentMethod,
+        fuelType,
+        fuelAmount,
+        customerId,
+        pumpId: pump._id,
+        employeeId,
+      });
+
+      // Save transaction
+      await transaction.save();
+    }
+    // Check if customer and employee have push tokens
+    if (!customer.pushToken) {
+      console.error("Customer does not have a push token");
+    }
+
+    if (!employee.pushToken) {
+      console.error("Employee does not have a push token");
+    }
+
+    console.log(customer.pushToken, employee.pushToken);
+
+    // Function to send notifications
+    async function sendNotifications(
+      customerToken,
+      employeeToken,
+      amount,
+      fuelAmount,
+      fuelType,
+      customerName,
+      transactionId
+    ) {
+      let expo = new Expo({
+        accessToken: process.env.EXPO_ACCESS_TOKEN,
+        useFcmV1: true,
+      });
+
+      let customerMessages = [];
+      let employeeMessages = [];
+
+      // Prepare message for customer
+      if (Expo.isExpoPushToken(customerToken)) {
+        customerMessages.push({
+          to: customerToken,
+          sound: "default",
+          body: `Transaction of ${amount} completed for ${fuelAmount} ${fuelType}`,
+          data: { transactionId: transactionId },
+        });
+      } else {
+        console.error(
+          `Customer push token ${customerToken} is not a valid Expo push token`
+        );
+      }
+
+      // Prepare message for refueler
+      if (Expo.isExpoPushToken(employeeToken)) {
+        employeeMessages.push({
+          to: employeeToken,
+          sound: "default",
+          body: `Transaction of ${amount} completed for customer ${customerName}`,
+          data: { transactionId: transactionId },
+        });
+      } else {
+        console.error(
+          `Employee push token ${employeeToken} is not a valid Expo push token`
+        );
+      }
+
+      // Send customer notifications
+      if (customerMessages.length > 0) {
+        let customerChunks = expo.chunkPushNotifications(customerMessages);
+        for (let chunk of customerChunks) {
+          try {
+            let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+            console.log(ticketChunk);
+          } catch (error) {
+            console.error("Error sending customer push notification:", error);
+          }
+        }
+      }
+
+      // Send employee notifications
+      if (employeeMessages.length > 0) {
+        let employeeChunks = expo.chunkPushNotifications(employeeMessages);
+        for (let chunk of employeeChunks) {
+          try {
+            let ticketChunk = await expo.sendPushNotificationsAsync(chunk);
+            console.log(ticketChunk);
+          } catch (error) {
+            console.error("Error sending employee push notification:", error);
+          }
+        }
+      }
+    }
+
+    // Call the sendNotifications function
+    await sendNotifications(
+      customer.pushToken,
+      employee.pushToken,
+      amount,
+      fuelAmount,
+      fuelType,
+      customer.name,
+      transaction._id
+    );
+
+    res.status(200).json({
+      message:
+        paymentMethod === "app"
+          ? "Transaction successful, payment received through app"
+          : "Transaction successful, kindly take cash payment from customer",
+      transaction,
     });
   } catch (error) {
     console.error(error);

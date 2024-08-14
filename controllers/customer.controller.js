@@ -1,4 +1,5 @@
 import Customer from "../models/customer.model.js";
+import { uploadToCloudinary } from "../utils/cloudinary.js";
 import Transaction from "../models/transaction.model.js";
 import FundsTransfer from "../models/fundsTransfer.model.js";
 import TopUp from "../models/topUp.model.js";
@@ -149,6 +150,52 @@ export const getCustomerList = async (req, res) => {
       .json({ message: "Customers retrieved successfully", customers });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc customer uploads his image
+// @route /api/customer/uploadImage
+// @access customer
+export const uploadImage = async (req, res) => {
+  try {
+    const customer = req.customer;
+    const { image } = req.body;
+    const { url } = await uploadToCloudinary(image);
+    const updatedCustomer = await Customer.findById(customer.userId);
+
+    updatedCustomer.imageUrl = url;
+    await updatedCustomer.save();
+
+    res.status(200).json({
+      message: "Image updated successfully",
+      url: url,
+    });
+  } catch (error) {
+    console.error("Error uploading image:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// @desc customer updates his push token
+// @route /api/customer/updatePushToken
+// @access customer
+export const updatePushToken = async (req, res) => {
+  const customer = req.customer;
+  const { pushToken } = req.body;
+
+  try {
+    const updatedCustomer = await Customer.findByIdAndUpdate(customer.userId, {
+      pushToken,
+    });
+
+    console.log(updatedCustomer);
+
+    res.status(200).json({
+      message: "Push token updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating push token:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
